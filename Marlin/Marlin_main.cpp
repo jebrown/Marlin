@@ -360,15 +360,15 @@ bool target_direction;
   #define TOWER_3 Z_AXIS
 
   float delta[3] = { 0 };
-  #define SIN_60 0.8660254037844386
-  #define COS_60 0.5
+  #define SIN_60 0.8660254037844386  
+  #define COS_60 0.5  
   float endstop_adj[3] = { 0 };
   // these are the default values, can be overriden with M665
   float delta_radius = DELTA_RADIUS;
-  float delta_tower1_x = -SIN_60 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_1); // front left tower
-  float delta_tower1_y = -COS_60 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_1);
-  float delta_tower2_x =  SIN_60 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_2); // front right tower
-  float delta_tower2_y = -COS_60 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_2);
+  float delta_tower1_x = SIN_tower1 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_1); // front left tower
+  float delta_tower1_y = COS_tower1 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_1);
+  float delta_tower2_x = SIN_tower2 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_2); // front right tower
+  float delta_tower2_y = COS_tower2 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_2);
   float delta_tower3_x = 0;                                                    // back middle tower
   float delta_tower3_y = (delta_radius + DELTA_RADIUS_TRIM_TOWER_3);
   float delta_diagonal_rod = DELTA_DIAGONAL_ROD;
@@ -2873,6 +2873,26 @@ inline void gcode_G28() {
 
     st_synchronize();
 
+     #define MSG_PROBE_NOT_DEPLOYED  "G29 probe not deployed"
+    
+    if (!deploy_probe_for_each_reading) { // if the probe is not to deploy for each point,
+                                          // it should be deploy at this point.
+                                          // otherwise return in error
+      boolean probestate=true;
+      #if HAS_Z_MIN
+        probestate=READ(Z_MIN_PIN)^Z_MIN_ENDSTOP_INVERTING;
+      #endif
+      #ifdef Z_PROBE_ENDSTOP
+        probestate=READ(Z_PROBE_PIN)^Z_PROBE_ENDSTOP_INVERTING;
+      #endif
+
+      if (probestate){      // test the probe state  state                         
+        LCD_MESSAGEPGM(MSG_PROBE_NOT_DEPLOYED);
+        SERIAL_ECHO_START;
+        SERIAL_ECHOLN(MSG_PROBE_NOT_DEPLOYED);
+        return;
+      }
+    }
     if (!dryrun) {
       // make sure the bed_level_rotation_matrix is identity or the planner will get it wrong
       plan_bed_level_matrix.set_to_identity();
@@ -5041,7 +5061,7 @@ inline void gcode_M303() {
  */
 inline void gcode_M400() { st_synchronize(); }
 
-#if ENABLED(AUTO_BED_LEVELING_FEATURE) && DISABLED(Z_PROBE_SLED) && (HAS_SERVO_ENDSTOPS || ENABLED(Z_PROBE_ALLEN_KEY))
+#if ENABLED(AUTO_BED_LEVELING_FEATURE) || ( DISABLED(Z_PROBE_SLED) && (HAS_SERVO_ENDSTOPS || ENABLED(Z_PROBE_ALLEN_KEY)))
 
   /**
    * M401: Engage Z Servo endstop if available
@@ -5051,6 +5071,30 @@ inline void gcode_M400() { st_synchronize(); }
       raise_z_for_servo();
     #endif
     deploy_z_probe();
+
+        // and block if probe is not deployed
+    #define MSG_WAIT_PROBE_DEPLOYED "Wait probe deployment"
+     boolean probestate=true,probe_msg=true;
+  
+     while(probestate){
+      #if HAS_Z_MIN
+        probestate=READ(Z_MIN_PIN)^Z_MIN_ENDSTOP_INVERTING;
+      #endif
+      #ifdef Z_PROBE_ENDSTOP
+        probestate=READ(Z_PROBE_PIN)^Z_PROBE_ENDSTOP_INVERTING;
+      #endif
+  
+      if (probestate && probe_msg){      // send waiting message once                        
+        LCD_MESSAGEPGM(MSG_WAIT_PROBE_DEPLOYED);
+        SERIAL_ECHO_START;
+        SERIAL_ECHOLNPGM(MSG_WAIT_PROBE_DEPLOYED);
+        probe_msg=false;
+      }
+      idle();
+     }
+     SERIAL_ECHOLNPGM(MSG_ZPROBE_OUT);
+     LCD_MESSAGEPGM(MSG_ZPROBE_OUT);
+
   }
 
   /**
@@ -5061,6 +5105,38 @@ inline void gcode_M400() { st_synchronize(); }
       raise_z_for_servo();
     #endif
     stow_z_probe(false);
+
+   // and block if probe is not stowed
+    #define MSG_WAIT_PROBE_DEPLOYED "Wait probe stowed"
+     boolean probestate=false,probe_msg=true;
+  
+     while( ! probestate){
+      #if HAS_Z_MIN
+        probestate=READ(Z_MIN_PIN)^Z_MIN_ENDSTOP_INVERTING;
+      #endif
+      #ifdef Z_PROBE_ENDSTOP
+        probestate=READ(Z_PROBE_PIN)^Z_PROBE_ENDSTOP_INVERTING;
+      #endif
+  
+      if (! probestate && probe_msg){      // send waiting message once                        
+        LCD_MESSAGEPGM(MSG_WAIT_PROBE_DEPLOYED);
+        SERIAL_ECHO_START;
+        SERIAL_ECHOLNPGM(MSG_WAIT_PROBE_DEPLOYED);
+        probe_msg=false;
+      }
+      idle();
+     }
+     // add a waiting tiile to secure the probe
+     if (! probe_msg){
+      millis_t codenum = 3500;
+      codenum += millis();  // keep track of when we started waiting
+
+     while (millis() < codenum) idle();
+      ;
+     }
+     SERIAL_ECHOLNPGM(WELCOME_MSG);
+     LCD_MESSAGEPGM(WELCOME_MSG);
+    
   }
 
 #endif // AUTO_BED_LEVELING_FEATURE && (HAS_SERVO_ENDSTOPS || Z_PROBE_ALLEN_KEY) && !Z_PROBE_SLED
@@ -5628,18 +5704,23 @@ inline void gcode_T(uint8_t tmp_extruder) {
           }
         #else // !DUAL_X_CARRIAGE
           // Offset extruder (only by XY)
-          for (int i = X_AXIS; i <= Y_AXIS; i++)
-            current_position[i] += extruder_offset[i][tmp_extruder] - extruder_offset[i][active_extruder];
-          // Set the new active extruder and position
-          active_extruder = tmp_extruder;
-        #endif // !DUAL_X_CARRIAGE
-        #if ENABLED(DELTA)
-          sync_plan_position_delta();
-        #else
-          sync_plan_position();
-        #endif
-        // Move to the old position if 'F' was in the parameters
-        if (make_move && IsRunning()) prepare_move();
+          if (extruder_offset[X_AXIS][tmp_extruder]==0 && extruder_offset[Y_AXIS][tmp_extruder]==0 &&
+              extruder_offset[X_AXIS][active_extruder]==0 && extruder_offset[Y_AXIS][active_extruder]==0){
+              active_extruder = tmp_extruder;
+          } else {
+              for (int i = X_AXIS; i <= Y_AXIS; i++)
+                current_position[i] += extruder_offset[i][tmp_extruder] - extruder_offset[i][active_extruder];
+              // Set the new active extruder and position
+              active_extruder = tmp_extruder;
+            #endif // !DUAL_X_CARRIAGE
+            #if ENABLED(DELTA)
+              sync_plan_position_delta();
+            #else
+              sync_plan_position();
+            #endif
+            // Move to the old position if 'F' was in the parameters
+            if (make_move && IsRunning()) prepare_move();
+          }
       }
 
       #if ENABLED(EXT_SOLENOID)
@@ -6105,7 +6186,7 @@ void process_next_command() {
         gcode_M400();
         break;
 
-      #if ENABLED(AUTO_BED_LEVELING_FEATURE) && (HAS_SERVO_ENDSTOPS || ENABLED(Z_PROBE_ALLEN_KEY)) && DISABLED(Z_PROBE_SLED)
+      #if ENABLED(AUTO_BED_LEVELING_FEATURE) || ( (HAS_SERVO_ENDSTOPS || ENABLED(Z_PROBE_ALLEN_KEY)) && DISABLED(Z_PROBE_SLED))
         case 401:
           gcode_M401();
           break;
@@ -6279,10 +6360,10 @@ void clamp_to_software_endstops(float target[3]) {
 #if ENABLED(DELTA)
 
   void recalc_delta_settings(float radius, float diagonal_rod) {
-    delta_tower1_x = -SIN_60 * (radius + DELTA_RADIUS_TRIM_TOWER_1);  // front left tower
-    delta_tower1_y = -COS_60 * (radius + DELTA_RADIUS_TRIM_TOWER_1);
-    delta_tower2_x =  SIN_60 * (radius + DELTA_RADIUS_TRIM_TOWER_2);  // front right tower
-    delta_tower2_y = -COS_60 * (radius + DELTA_RADIUS_TRIM_TOWER_2);
+    delta_tower1_x = SIN_tower1 * (radius + DELTA_RADIUS_TRIM_TOWER_1);  // front left tower
+    delta_tower1_y = COS_tower1 * (radius + DELTA_RADIUS_TRIM_TOWER_1);
+    delta_tower2_x = SIN_tower2 * (radius + DELTA_RADIUS_TRIM_TOWER_2);  // front right tower
+    delta_tower2_y = COS_tower2 * (radius + DELTA_RADIUS_TRIM_TOWER_2);
     delta_tower3_x = 0.0;                                             // back middle tower
     delta_tower3_y = (radius + DELTA_RADIUS_TRIM_TOWER_3);
     delta_diagonal_rod_2_tower_1 = sq(delta_diagonal_rod + delta_diagonal_rod_trim_tower_1);
