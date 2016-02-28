@@ -1,0 +1,23 @@
+
+
+Modifications on MARLIN 1.10 RC3 for GEEETECH G2S
+
+
+- modifications on pins_ULTIMAKER.h 
+
+- add Geeetech thermistor table as 14 in thermistortables.h
+
+- Modfication of DEFAULT_STEPPER_DEACTIVE_TIME SD_FINISHED_STEPPERRELEASE SD_FINISHED_RELEASECOMMAND in Configuration_adv.h
+
+- add constants SIN_tower1, SIN_tower2, SIN_tower2, SIN_tower2 in Configuration.h, to change geometry description without modification of the Marlin_main.cpp
+  use of theses constants in marlin_main.cpp
+
+- add DELTA_DIAGONAL_ROD_TRIM_TOWER_X in Configuration.h
+
+- modify M401 and M402 in marlin_main.cpp to be blocking for use in gcode scripts (not a bug but usefull)
+
+- modify gcode_G29() in marlin_main.cpp (not a bug) to avoid unpredictable behavior if z_probe is not deployed. (If the probe should not deployed correctly between probes there may be yet some unpredictable behavior)
+
+- modify gcode_T() in marlin_main.cpp to supress a bug in use of G29 AND two extruders
+
+- modfy default_version.h to change build name to "1.1.0-RC3 mod G2S"
