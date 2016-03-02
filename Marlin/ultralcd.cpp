@@ -800,14 +800,44 @@ static void lcd_prepare_menu() {
 
 #if ENABLED(DELTA_CALIBRATION_MENU)
 
+  float delta_calib_finalheight = 0.2;
+
+  void delta_finalcalib(){
+    static char deltacommand [18];
+    sprintf_P(deltacommand,PSTR("G0 F400 Z%s"),ftostr31(delta_calib_finalheight));
+    enqueuecommand(deltacommand);
+  }
+
+  void delta_calibreta_x () {
+    enqueuecommands_P(( PSTR("G0 F8000 X-77.94 Y-45 Z10")));
+    delta_finalcalib();
+  }
+  
+  void delta_calibreta_y () {
+    enqueuecommands_P(( PSTR("G0 F8000 X77.94 Y-45 Z10")));
+     delta_finalcalib();
+  }
+  
+  void delta_calibreta_z () {
+    enqueuecommands_P(( PSTR("G0 F8000 X0 Y90 Z10")));
+     delta_finalcalib();
+  }
+  
+  void delta_calibreta_c () {
+    enqueuecommands_P(( PSTR("G0 F8000 X0 Y0 Y-45 Z10")));
+     delta_finalcalib();
+  }
+  
   static void lcd_delta_calibrate_menu() {
     START_MENU();
     MENU_ITEM(back, MSG_MAIN, lcd_main_menu);
+    MENU_ITEM_EDIT(float32, MSG_DELTA_CALIBRATE_HGHT, &delta_calib_finalheight, 0.0, 10.0);
     MENU_ITEM(gcode, MSG_AUTO_HOME, PSTR("G28"));
-    MENU_ITEM(gcode, MSG_DELTA_CALIBRATE_X, PSTR("G0 F8000 X-77.94 Y-45 Z0"));
-    MENU_ITEM(gcode, MSG_DELTA_CALIBRATE_Y, PSTR("G0 F8000 X77.94 Y-45 Z0"));
-    MENU_ITEM(gcode, MSG_DELTA_CALIBRATE_Z, PSTR("G0 F8000 X0 Y90 Z0"));
-    MENU_ITEM(gcode, MSG_DELTA_CALIBRATE_CENTER, PSTR("G0 F8000 X0 Y0 Z0"));
+
+    MENU_ITEM(function, MSG_DELTA_CALIBRATE_X, delta_calibreta_x);
+    MENU_ITEM(function, MSG_DELTA_CALIBRATE_Y, delta_calibreta_y);
+    MENU_ITEM(function, MSG_DELTA_CALIBRATE_Z, delta_calibreta_z);
+    MENU_ITEM(function, MSG_DELTA_CALIBRATE_CENTER, delta_calibreta_c);
     END_MENU();
   }
 
