@@ -968,6 +968,29 @@ const bool Z_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the logic
 //define BlinkM/CyzRgb Support
 //#define BLINKM
 
+//  LEDSTRIP allow the use of a ledstrip on output pin with M150 gcode
+//   M150: Set Status LED Color - Use R-V-B for R-G-B
+//          use S for segment 1 2 3...0 for all
+//          use P for power 1 is on 2 is half on 3 is off
+//          
+//          "M150 P1" turn on all ledstrip with saved color (by default linen white)
+//          "M150 R130 V50 B80 S1"  change the color of segment 1 and store this color value for this segment
+//          "M150 S1 P2" turn on half of the leds in segment1 with saved color for this segment (seashell white by default)
+//          "M150 R30 V70 B10" change the color of entire ledstrip and save this color for futur use
+//          
+//   
+
+//#define LEDSTRIP
+
+#if ENABLED(LEDSTRIP)
+  #define LEDSTRIP_PIN 22 // added in place of X_min first connector on GT2560
+  #define LEDSTRIP_NLED 36 
+  #define LEDSTRIP_NSEGMENT 3 // LEDS maybe divided in segments for ease of use
+  #define LEDSTRIP_TYPE WS2812B
+  //#define LEDSTRIP_EXCHANGE_RV  // ??? somehow necessary
+  #define MSG_LED_LIGHTING "Lighting"
+#endif
+
 /*********************************************************************\
 * R/C SERVO support
 * Sponsored by TrinityLabs, Reworked by codexmas

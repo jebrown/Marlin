@@ -23,3 +23,5 @@ Modifications on MARLIN 1.10 RC3 for GEEETECH G2S
 - modify default_version.h to change build name to "1.1.0-RC3 mod G2S"
 
 - modification on DELTA_CALIBRATION_MENU : add submenu for the choice of final height, modify command for low speed on final move
+
+- add of LEDSTRIP support with Fastled library, modification of M150 GCODE, add of a specific LCD menu

@@ -7,6 +7,10 @@
 #include "stepper.h"
 #include "configuration_store.h"
 
+#if ENABLED(LEDSTRIP)
+ #include "ledstrip.h"
+#endif
+
 int8_t encoderDiff; // updated from interrupt context and added to encoderPosition every LCD update
 
 bool encoderRateMultiplierEnabled;
@@ -75,6 +79,10 @@ static void lcd_status_screen();
     static void lcd_level_bed();
   #endif
 
+  #if ENABLED (LEDSTRIP)
+    static void lcd_led_lighting ();
+  #endif
+  
   /* Different types of actions that can be used in menu items. */
   static void menu_action_back(menuFunc_t data);
   static void menu_action_submenu(menuFunc_t data);
@@ -435,6 +443,13 @@ static void lcd_main_menu() {
       #endif
     }
   #endif //SDSUPPORT
+
+  //
+  // LEDSTRIP COMMAND
+  //  
+  #if ENABLED(LEDSTRIP)
+    MENU_ITEM(submenu, MSG_LED_LIGHTING, lcd_led_lighting );
+  #endif
 
   END_MENU();
 }
@@ -985,6 +1000,50 @@ static void lcd_move_menu() {
   END_MENU();
 }
 
+/**
+ *
+ * "Main" > "Lightning" submenu
+ *    
+ */
+#if ENABLED(LEDSTRIP)
+
+  int ledstrip_segment =0;
+  char ledstripgcode [15];
+
+  void lcd_led_command (int pi) {
+    sprintf_P(ledstripgcode,PSTR("M150 P%i S%i"),pi,ledstrip_segment);
+    enqueuecommand(ledstripgcode);
+  }
+  
+  void lcd_led_poweron () {
+    lcd_led_command(LED_POWERON);
+  }
+  
+  void lcd_led_poweroff () {
+    lcd_led_command(LED_POWEROFF);
+  }
+  
+  void lcd_led_powerhalf () {
+    lcd_led_command(LED_POWERHALF);
+  }
+  
+  static void lcd_led_lighting() {
+
+    START_MENU();
+    MENU_ITEM(back, MSG_MAIN, lcd_main_menu);
+    MENU_ITEM_EDIT(int3, "LED SEGMENT ", &ledstrip_segment, 0, LEDSTRIP_NSEGMENT );
+    
+    MENU_ITEM(function, "LED POWER ON", lcd_led_poweron);  
+    MENU_ITEM(function, "LED POWER HALF", lcd_led_powerhalf);  
+    MENU_ITEM(function, "LED POWER OFF", lcd_led_poweroff);  
+
+    END_MENU();
+  }
+  
+ #endif
+
+
+  
 /**
  *
  * "Control" submenu
