@@ -60,6 +60,10 @@
   #include "Wire.h"
 #endif
 
+#if ENABLED(LEDSTRIP)
+  #include "ledstrip.h"
+#endif
+ 
 #if HAS_SERVOS
   #include "servo.h"
 #endif
@@ -4390,7 +4394,30 @@ inline void gcode_M121() { enable_endstops(false); }
     );
   }
 
-#endif // BLINKM
+#elif ENABLED(LEDSTRIP)
+  /**
+   * 
+   * M150: Set Status LED Color - Use R-V-B for R-G-B
+   *       use S for segment 1 2 3...0 for all
+   *       use P for power 1 is on 2 is half on 3 is off
+   *       "M150 P1" turn on all ledstrip with saved color (by default linen white)
+   *       "M150 R130 V50 B80 S1"  change the color of segment 1 and store this color value for this segment
+   *       "M150 S1 P2" turn on half of the leds in segment1 with saved color for this segment (black by default)
+   *       "M150 R30 V70 B10" change the color of entire ledstrip and save this color for futur use
+   *       
+   */
+   
+  inline void gcode_M150() {
+    SendColorsOnLedstrip(
+      code_seen('R') ? (int)code_value_short() : -1,
+      code_seen('V') ? (int)code_value_short() : -1,
+      code_seen('B') ? (int)code_value_short() : -1,
+      code_seen('S') ? (byte)code_value_short() : 0,   
+      code_seen('P') ? (byte)code_value_short() : LED_POWERNOCHG   
+    );
+  }
+
+#endif // BLINKM LEDSTRIP
 
 /**
  * M200: Set filament diameter and set E axis units to cubic millimeters
@@ -6041,7 +6068,7 @@ void process_next_command() {
 
       #endif
 
-      #if ENABLED(BLINKM)
+      #if ENABLED(BLINKM) || ENABLED(LEDSTRIP)
 
         case 150: // M150
           gcode_M150();
