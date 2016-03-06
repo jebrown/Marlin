@@ -525,6 +525,11 @@ const bool Z_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the logic
 
 #if ENABLED(AUTO_BED_LEVELING_FEATURE)
 
+  // Precision for G30/G40 delta autocalibration function
+  #define AUTOCALIBRATION_PRECISION 0.03 // mm
+  // Diameter of print bed for G30/G40- this is used to set the distance that autocalibration probes the bed at.
+  #define BED_DIAMETER 150 // mm
+
   // There are 2 different ways to specify probing locations.
   //
   // - "grid" mode
@@ -543,7 +548,7 @@ const bool Z_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the logic
   #if ENABLED(AUTO_BED_LEVELING_GRID)
 
     // set the rectangle in which to probe
-    #define DELTA_PROBABLE_RADIUS (DELTA_PRINTABLE_RADIUS - 60)
+    #define DELTA_PROBABLE_RADIUS (DELTA_PRINTABLE_RADIUS - 30)
     #define LEFT_PROBE_BED_POSITION -DELTA_PROBABLE_RADIUS
     #define RIGHT_PROBE_BED_POSITION DELTA_PROBABLE_RADIUS
     #define FRONT_PROBE_BED_POSITION -DELTA_PROBABLE_RADIUS
@@ -555,7 +560,7 @@ const bool Z_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the logic
     // Compensate by interpolating between the nearest four Z probe values for each point.
     // Useful for deltas where the print surface may appear like a bowl or dome shape.
     // Works best with ACCURATE_BED_LEVELING_POINTS 5 or higher.
-    #define AUTO_BED_LEVELING_GRID_POINTS 5
+    #define AUTO_BED_LEVELING_GRID_POINTS 7
 
   #else  // !AUTO_BED_LEVELING_GRID
 
