@@ -3323,7 +3323,7 @@ inline void gcode_G28() {
         float tower_adj[6]={0,0,0,0,0,0};
         //float delta_radius; // = DEFAULT_delta_radius;
         //float delta_diagonal_rod; // = DEFAULT_DELTA_DIAGONAL_ROD;
-        float DELTA_DIAGONAL_ROD_2;
+        //float DELTA_DIAGONAL_ROD_2;
         float ac_prec = AUTOCALIBRATION_PRECISION / 2;
         float bed_radius = BED_DIAMETER / 2;
         //float delta_tower1_x, delta_tower1_y;
@@ -3567,7 +3567,10 @@ void bed_probe_all()
       base_max_pos[Z_AXIS]  = max_pos[Z_AXIS];
       base_home_pos[Z_AXIS] = max_pos[Z_AXIS];
   
-  DELTA_DIAGONAL_ROD_2 = pow(delta_diagonal_rod,2);
+      //DELTA_DIAGONAL_ROD_2 = pow(delta_diagonal_rod,2);
+      delta_diagonal_rod_2_tower_1 = sq(delta_diagonal_rod + delta_diagonal_rod_trim_tower_1);
+      delta_diagonal_rod_2_tower_2 = sq(delta_diagonal_rod + delta_diagonal_rod_trim_tower_2);
+      delta_diagonal_rod_2_tower_3 = sq(delta_diagonal_rod + delta_diagonal_rod_trim_tower_3);
   
   // Effective X/Y positions of the three vertical towers.
   /*
