@@ -1019,9 +1019,16 @@ DEFINE_PGM_READ_ANY(signed char, byte);
   { return pgm_read_any(&array##_P[axis]); }
 
 XYZ_CONSTS_FROM_CONFIG(float, base_min_pos,   MIN_POS);
-XYZ_CONSTS_FROM_CONFIG(float, base_max_pos,   MAX_POS);
-XYZ_CONSTS_FROM_CONFIG(float, base_home_pos,  HOME_POS);
-XYZ_CONSTS_FROM_CONFIG(float, max_length,     MAX_LENGTH);
+
+// not constants when using autro config
+//XYZ_CONSTS_FROM_CONFIG(float, base_max_pos,   MAX_POS);
+//XYZ_CONSTS_FROM_CONFIG(float, base_home_pos,  HOME_POS);
+//XYZ_CONSTS_FROM_CONFIG(float, max_length,     MAX_LENGTH);
+        float base_max_pos[3] = {X_MAX_POS, Y_MAX_POS, Z_MAX_POS};
+        float base_home_pos[3] = {X_HOME_POS, Y_HOME_POS, Z_HOME_POS};
+        float max_length[3] = {X_MAX_LENGTH, Y_MAX_LENGTH, Z_MAX_LENGTH};
+
+
 XYZ_CONSTS_FROM_CONFIG(float, home_bump_mm,   HOME_BUMP_MM);
 XYZ_CONSTS_FROM_CONFIG(signed char, home_dir, HOME_DIR);
 
@@ -1129,9 +1136,9 @@ static void set_axis_is_at_home(AxisEnum axis) {
     else
   #endif
   {
-    current_position[axis] = base_home_pos(axis) + home_offset[axis];
+    current_position[axis] = base_home_pos[axis] + home_offset[axis];
     min_pos[axis] = base_min_pos(axis) + home_offset[axis];
-    max_pos[axis] = base_max_pos(axis) + home_offset[axis];
+    max_pos[axis] = base_max_pos[axis] + home_offset[axis];
 
     #if ENABLED(AUTO_BED_LEVELING_FEATURE) && Z_HOME_DIR < 0
       if (axis == Z_AXIS) current_position[Z_AXIS] -= zprobe_zoffset;
@@ -1868,7 +1875,7 @@ static void homeaxis(AxisEnum axis) {
     #endif
 
     // Move towards the endstop until an endstop is triggered
-    destination[axis] = 1.5 * max_length(axis) * axis_home_dir;
+    destination[axis] = 1.5 * max_length[axis] * axis_home_dir;
     feedrate = homing_feedrate[axis];
     line_to_destination();
     st_synchronize();
@@ -3322,9 +3329,9 @@ inline void gcode_G28() {
         //float delta_tower1_x, delta_tower1_y;
         //float delta_tower2_x, delta_tower2_y;
         //float delta_tower3_x, delta_tower3_y;
-        float D_base_max_pos[3] = {X_MAX_POS, Y_MAX_POS, Z_MAX_POS};
-        float D_base_home_pos[3] = {X_HOME_POS, Y_HOME_POS, Z_HOME_POS};
-        float D_max_length[3] = {X_MAX_LENGTH, Y_MAX_LENGTH, Z_MAX_LENGTH};
+        //float D_base_max_pos[3] = {X_MAX_POS, Y_MAX_POS, Z_MAX_POS};
+        //float D_base_home_pos[3] = {X_HOME_POS, Y_HOME_POS, Z_HOME_POS};
+        //float D_max_length[3] = {X_MAX_LENGTH, Y_MAX_LENGTH, Z_MAX_LENGTH};
         float saved_position[3]={0.0,0.0,0.0};
         float saved_positions[7][3] = {
           {0, 0, 0},
@@ -3356,9 +3363,9 @@ void home_delta_axis() {
     current_position[Z_AXIS] = 0;
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
 
-    destination[X_AXIS] = 3 * D_max_length[Z_AXIS];
-    destination[Y_AXIS] = 3 * D_max_length[Z_AXIS];
-    destination[Z_AXIS] = 3 * D_max_length[Z_AXIS];
+    destination[X_AXIS] = 3 * max_length[Z_AXIS];
+    destination[Y_AXIS] = 3 * max_length[Z_AXIS];
+    destination[Z_AXIS] = 3 * max_length[Z_AXIS];
     feedrate = 1.732 * homing_feedrate[X_AXIS];
     plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/60, active_extruder);
     st_synchronize();
@@ -3510,42 +3517,44 @@ void bed_probe_all()
   {
   
   //Display Report
-  SERIAL_ECHOLN("\tZ-Tower\t\t\tEndstop Offsets");
+  SERIAL_ECHOLN("|\tZ-Tower\t\t\tEndstop Offsets");
 
-  SERIAL_ECHO("\t");
+  SERIAL_ECHO("|\t");
   SERIAL_PROTOCOL_F(bed_level_z, 4);
-  SERIAL_ECHOPAIR("\t\t\tX:",endstop_adj[0]);
+  SERIAL_ECHOPAIR("\t\t\t\tX:",endstop_adj[0]);
   SERIAL_ECHOPAIR(" Y:",endstop_adj[1]);
   SERIAL_ECHOPAIR(" Z:",endstop_adj[2]);
   SERIAL_ECHOLN("");
 
+  SERIAL_ECHO("|");
   SERIAL_PROTOCOL_F(bed_level_oy, 4);
-  SERIAL_PROTOCOLPGM("\t\t");
-  SERIAL_PROTOCOL_F(bed_level_ox, 4);
-  SERIAL_ECHOLN("\t\tTower Position Adjust");
-
   SERIAL_PROTOCOLPGM("\t");
+  SERIAL_PROTOCOL_F(bed_level_ox, 4);
+  SERIAL_ECHOLN("\t\t\tTower Position Adjust");
+
+  SERIAL_PROTOCOLPGM("|\t");
   SERIAL_PROTOCOL_F(bed_level_c, 4);
-  SERIAL_ECHOPAIR("\t\t\tA:",tower_adj[0]);
+  SERIAL_ECHOPAIR("\t\t\t\tA:",tower_adj[0]);
   SERIAL_ECHOPAIR(" B:",tower_adj[1]);
   SERIAL_ECHOPAIR(" C:",tower_adj[2]);
   SERIAL_ECHOLN("");
 
+  SERIAL_ECHO("|");
   SERIAL_PROTOCOL_F(bed_level_x, 4);
-  SERIAL_PROTOCOLPGM("\t\t");
+  SERIAL_PROTOCOLPGM("\t");
   SERIAL_PROTOCOL_F(bed_level_y, 4);
-  SERIAL_ECHOPAIR("\t\tI:",tower_adj[3]);
+  SERIAL_ECHOPAIR("\t\t\tI:",tower_adj[3]);
   SERIAL_ECHOPAIR(" J:",tower_adj[4]);
   SERIAL_ECHOPAIR(" K:",tower_adj[5]);
   SERIAL_ECHOLN("");
 
-  SERIAL_PROTOCOLPGM("\t");
+  SERIAL_PROTOCOLPGM("|\t");
   SERIAL_PROTOCOL_F(bed_level_oz, 4);
-  SERIAL_PROTOCOLPGM("\t\t\tDelta Radius: ");
+  SERIAL_PROTOCOLPGM("\t\t\t\tDelta Radius: ");
   SERIAL_PROTOCOL_F(delta_radius, 4);
   SERIAL_ECHOLN("");
 
-  SERIAL_PROTOCOLPGM("X-Tower\t\tY-Tower\t\tDiag Rod: ");
+  SERIAL_PROTOCOLPGM("|X-Tower\tY-Tower\t\tDiag Rod: ");
   SERIAL_PROTOCOL_F(delta_diagonal_rod, 4);
   SERIAL_ECHOLN("");
 }
@@ -3553,11 +3562,10 @@ void bed_probe_all()
 
 
 
-   void set_delta_constants()
-{
-  D_max_length[Z_AXIS] = max_pos[Z_AXIS] - Z_MIN_POS;
-  D_base_max_pos[Z_AXIS]  = max_pos[Z_AXIS];
-  D_base_home_pos[Z_AXIS] = max_pos[Z_AXIS];
+   void set_delta_constants(){
+      max_length[Z_AXIS] = max_pos[Z_AXIS] - Z_MIN_POS;
+      base_max_pos[Z_AXIS]  = max_pos[Z_AXIS];
+      base_home_pos[Z_AXIS] = max_pos[Z_AXIS];
   
   DELTA_DIAGONAL_ROD_2 = pow(delta_diagonal_rod,2);
   
@@ -3772,18 +3780,15 @@ void bed_probe_all()
             SERIAL_ECHO(loopcount);
             SERIAL_ECHOLN("");
                                  
-            if ((bed_level_c > 3) or (bed_level_c < -3))
-              {
+            if ((bed_level_c > 3) or (bed_level_c < -3)) {
               //Build height is not set correctly .. 
               max_pos[Z_AXIS] -= bed_level_c + 2;
               set_delta_constants();
               SERIAL_ECHOPAIR("Adjusting Z-Height to: ", max_pos[Z_AXIS]);
               SERIAL_ECHOLN(" mm..");
-              } 
-              else
-              {
-              if ((bed_level_x < -ac_prec) or (bed_level_x > ac_prec) or (bed_level_y < -ac_prec) or (bed_level_y > ac_prec) or (bed_level_z < -ac_prec) or (bed_level_z > ac_prec))
-                {  
+             } else {
+              if ((bed_level_x < -ac_prec) or (bed_level_x > ac_prec) or (bed_level_y < -ac_prec) or 
+                   (bed_level_y > ac_prec) or (bed_level_z < -ac_prec) or (bed_level_z > ac_prec)) {  
                 //Endstops req adjustment
                 SERIAL_ECHOLN("Adjusting Endstops..");
                 endstop_adj[0] += bed_level_x / 1.05;
@@ -3792,15 +3797,12 @@ void bed_probe_all()
                 
                 //Check that no endstop adj values are > 0 (not allowed).. if they are, reduce the build height to compensate.
                 h_endstop = 0;
-                for(int x=0; x < 3; x++)
-                  { 
+                for(int x=0; x < 3; x++) { 
                   if (endstop_adj[x] > h_endstop) h_endstop = endstop_adj[x]; 
                   }
-                if (h_endstop > 0) 
-                  {
+                if (h_endstop > 0)  {
                   //Reduce build height and adjust endstops
-                  for(int x=0; x < 3; x++)
-                    {
+                  for(int x=0; x < 3; x++) {
                     endstop_adj[x] -= h_endstop + 2;
                     }
                   max_pos[Z_AXIS] -= h_endstop + 2;
@@ -3808,9 +3810,7 @@ void bed_probe_all()
                   SERIAL_ECHOPAIR("Adjusting Z-Height to: ", max_pos[Z_AXIS]);
                   SERIAL_ECHOLN(" mm..");                
                   }
-                }
-                else 
-                {
+               } else  {
                 SERIAL_ECHOLN("Endstops: OK");
                  
                 adj_r_target = (bed_level_x + bed_level_y + bed_level_z) / 3;
@@ -4048,8 +4048,7 @@ void bed_probe_all()
                    } while(((adj_r_done == false) or (adj_dr_done = false)) and (loopcount < iterations)); 
                  
                    }
-                   else
-                   {
+                   else {
                    SERIAL_ECHOLN("Delta Geometry: OK");  
                    }
                   }
@@ -6115,7 +6114,7 @@ inline void gcode_M428() {
   memcpy(new_offs, home_offset, sizeof(new_offs));
   for (int8_t i = X_AXIS; i <= Z_AXIS; i++) {
     if (axis_known_position[i]) {
-      float base = (new_pos[i] > (min_pos[i] + max_pos[i]) / 2) ? base_home_pos(i) : 0,
+      float base = (new_pos[i] > (min_pos[i] + max_pos[i]) / 2) ? base_home_pos[i] : 0,
             diff = new_pos[i] - base;
       if (diff > -20 && diff < 20) {
         new_offs[i] -= diff;
