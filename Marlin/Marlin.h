@@ -274,6 +274,10 @@ extern bool axis_known_position[3]; // axis[n].is_known
     #define DELTA_RADIUS_TRIM_TOWER_3 0.0
   #endif
   extern float delta_diagonal_rod;
+  extern float delta_diagonal_rod_trim_tower_1 ;
+  extern float delta_diagonal_rod_trim_tower_2 ;
+  extern float delta_diagonal_rod_trim_tower_3 ;
+ 
   #ifndef DELTA_DIAGONAL_ROD_TRIM_TOWER_1
     #define DELTA_DIAGONAL_ROD_TRIM_TOWER_1 0.0
   #endif
