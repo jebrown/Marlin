@@ -709,12 +709,23 @@ void Config_PrintSettings(bool forReplay) {
     SERIAL_EOL;
     CONFIG_ECHO_START;
     if (!forReplay) {
-      SERIAL_ECHOLNPGM("Delta settings: L=delta_diagonal_rod, R=delta_radius, S=delta_segments_per_second");
+      //SERIAL_ECHOLNPGM("Delta settings: L=delta_diagonal_rod, R=delta_radius, S=delta_segments_per_second, ABC diagonal_rod_trim");
+
+      SERIAL_ECHOLNPGM("Delta settings: L=delta_diagonal_rod, R=delta_radius, S=delta_segments_per_second, ABC diagonal_rod_trim,DEF DELTA_ANGLE_TRIM_TOWER, IJK DELTA_RADIUS_TRIM_TOWER");
       CONFIG_ECHO_START;
     }
     SERIAL_ECHOPAIR("  M665 L", delta_diagonal_rod);
     SERIAL_ECHOPAIR(" R", delta_radius);
     SERIAL_ECHOPAIR(" S", delta_segments_per_second);
+    SERIAL_ECHOPAIR(" A", delta_diagonal_rod_trim_tower_1);
+    SERIAL_ECHOPAIR(" B", delta_diagonal_rod_trim_tower_2);
+    SERIAL_ECHOPAIR(" C", delta_diagonal_rod_trim_tower_3);
+    SERIAL_ECHOPAIR(" D", tower_adj[0]);
+    SERIAL_ECHOPAIR(" E", tower_adj[1]);
+    SERIAL_ECHOPAIR(" F", tower_adj[2]);
+    SERIAL_ECHOPAIR(" I", tower_adj[3]);
+    SERIAL_ECHOPAIR(" J", tower_adj[3]);
+    SERIAL_ECHOPAIR(" K", tower_adj[3]);
     SERIAL_EOL;
   #elif ENABLED(Z_DUAL_ENDSTOPS)
     CONFIG_ECHO_START;
