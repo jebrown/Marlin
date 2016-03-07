@@ -264,16 +264,12 @@ extern bool axis_known_position[3]; // axis[n].is_known
   extern float delta[3];
   extern float endstop_adj[3]; // axis[n].endstop_adj
   extern float delta_radius;
-  #ifndef DELTA_RADIUS_TRIM_TOWER_1
-    #define DELTA_RADIUS_TRIM_TOWER_1 0.0
-  #endif
-  #ifndef DELTA_RADIUS_TRIM_TOWER_2
-    #define DELTA_RADIUS_TRIM_TOWER_2 0.0
-  #endif
-  #ifndef DELTA_RADIUS_TRIM_TOWER_3
-    #define DELTA_RADIUS_TRIM_TOWER_3 0.0
-  #endif
+  extern float tower_adj[6]; 
   extern float delta_diagonal_rod;
+  extern float delta_diagonal_rod_trim_tower_1 ;
+  extern float delta_diagonal_rod_trim_tower_2 ;
+  extern float delta_diagonal_rod_trim_tower_3 ;
+ 
   #ifndef DELTA_DIAGONAL_ROD_TRIM_TOWER_1
     #define DELTA_DIAGONAL_ROD_TRIM_TOWER_1 0.0
   #endif
