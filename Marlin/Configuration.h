@@ -359,31 +359,23 @@ Here are some standard links for getting your machine calibrated:
   // Print surface diameter/2 minus unreachable space (avoid collisions with vertical towers).
   #define DELTA_PRINTABLE_RADIUS 104
 
-  // Added from: http://www.thingiverse.com/thing:745523
-  #define SIN_58 0.8480480961564259  
-  #define COS_58 0.5299192642332049  
-  #define SIN_59 0.8571673007021122  
-  #define COS_59 0.5150380749100542  
-  #define SIN_60 0.8660254037844386  
-  #define COS_60 0.5  
-  #define SIN_61 0.8746197071393958  
-  #define COS_61 0.4848096202463370  
-  #define SIN_62 0.8829475928589269  
-  #define COS_62 0.4694715627858907  
-
-  // change the following values for angle adjustment
-  #define SIN_tower1 -SIN_60
-  #define COS_tower1 -COS_60
- 
-  #define SIN_tower2  SIN_60
-  #define COS_tower2 -COS_60
-
   // Diagonal rod length adjustment 
-  // the other parameters maybe change by gcode M665 A B C...
+  // parameters maybe change by gcode M665 A B C
     #define DELTA_DIAGONAL_ROD_TRIM_TOWER_1 0.0
     #define DELTA_DIAGONAL_ROD_TRIM_TOWER_2 0.0
     #define DELTA_DIAGONAL_ROD_TRIM_TOWER_3 0.0
  
+  // Diagonal radius length adjustment 
+  // parameters maybe change by gcode M665 D E F (specific)
+    #define DELTA_RADIUS_TRIM_TOWER_1 0.0
+    #define DELTA_RADIUS_TRIM_TOWER_2 0.0
+    #define DELTA_RADIUS_TRIM_TOWER_3 0.0
+    
+  // Diagonal angle length adjustment 
+  // parameters maybe change by gcode M665 I J K (specific)
+    #define DELTA_ANGLE_TRIM_TOWER_1 0.0
+    #define DELTA_ANGLE_TRIM_TOWER_2 0.0
+    #define DELTA_ANGLE_TRIM_TOWER_3 0.0
 
 #endif
 
