@@ -27,26 +27,26 @@ To support all parameters of auto calibration I have added to M665 D E F paramet
 NONE OF THESE PARAMETERS ARE SAVED IN EEPROM, THEY SHOUD BE REENTERED AT EACH BOOT OR PUTIN THE SOURCE CODE :
 in configuration.h :
 `
-  // Diagonal rod length adjustment
-  // parameters maybe change by gcode M665 A B C
-    #define DELTA_DIAGONAL_ROD_TRIM_TOWER_1 0.0
-    #define DELTA_DIAGONAL_ROD_TRIM_TOWER_2 0.0
-    #define DELTA_DIAGONAL_ROD_TRIM_TOWER_3 0.0
+  // Diagonal rod length adjustment  
+  // parameters maybe change by gcode M665 A B C  
+    #define DELTA_DIAGONAL_ROD_TRIM_TOWER_1 0.0  
+    #define DELTA_DIAGONAL_ROD_TRIM_TOWER_2 0.0  
+    #define DELTA_DIAGONAL_ROD_TRIM_TOWER_3 0.0  
  
-  // Diagonal radius length adjustment
-  // parameters maybe change by gcode M665 D E F (specific)
-    #define DELTA_RADIUS_TRIM_TOWER_1 0.0
-    #define DELTA_RADIUS_TRIM_TOWER_2 0.0
-    #define DELTA_RADIUS_TRIM_TOWER_3 0.0
+  // Diagonal radius length adjustment  
+  // parameters maybe change by gcode M665 D E F (specific)  
+    #define DELTA_RADIUS_TRIM_TOWER_1 0.0  
+    #define DELTA_RADIUS_TRIM_TOWER_2 0.0  
+    #define DELTA_RADIUS_TRIM_TOWER_3 0.0  
     
-  // Diagonal angle length adjustment
-  // parameters maybe change by gcode M665 I J K (specific)
-    #define DELTA_ANGLE_TRIM_TOWER_1 0.0
-    #define DELTA_ANGLE_TRIM_TOWER_2 0.0
-    #define DELTA_ANGLE_TRIM_TOWER_3 0.0
- `  ?
+  // Diagonal angle length adjustment  
+  // parameters maybe change by gcode M665 I J K (specific)  
+    #define DELTA_ANGLE_TRIM_TOWER_1 0.0  
+    #define DELTA_ANGLE_TRIM_TOWER_2 0.0  
+    #define DELTA_ANGLE_TRIM_TOWER_3 0.0  
+  
 
-Main modification merged from the main branch :
+Main modification merged from the main branch :  
 
 - modifications on pins_ULTIMAKER.h 
 
