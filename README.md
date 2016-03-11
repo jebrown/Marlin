@@ -24,9 +24,9 @@ P : target precision (by default 0.03 mm)
 This firmware supports M665 A B C (but it is not to modify tower angles as original RichCattel version but diagonal rod length).
 To support all parameters of auto calibration I have added to M665 D E F parameters to adjust tower angle and I J K to adjust tower radius.
 
-NONE OF THESE PARAMETERS ARE SAVED IN EEPROM, THEY SHOUD BE REENTERED AT EACH BOOT OR PUTIN THE SOURCE CODE :
-in configuration.h :
-`
+NONE OF THESE PARAMETERS ARE SAVED IN EEPROM, THEY SHOUD BE REENTERED AT EACH BOOT OR PUTIN THE SOURCE CODE :  
+in configuration.h :  
+  
   // Diagonal rod length adjustment  
   // parameters maybe change by gcode M665 A B C  
     #define DELTA_DIAGONAL_ROD_TRIM_TOWER_1 0.0  
