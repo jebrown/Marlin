@@ -1,7 +1,43 @@
 # Marlin 3D Printer Firmware For Delta Geeetech G2S G2S PRO
 <img align="top" width=175 src="Documentation/Logo/g2spro.jpg" />
 <img align="top" width=175 src="Documentation/Logo/Marlin%20Logo%20GitHub.png" />
- Additional documentation can be found in [our wiki](https://github.com/MarlinFirmware/Marlin/wiki/Main-Page).
+
+## Specific version (slightly) modified for easy use on G2 G2S printer
+__No garantee whatsoever – use with caution!__
+ 
+ Compiled and tested on a G2S PRO. Last version of 07 march 2016.
+
+ Main modification :
+
+- modifications on pins_ULTIMAKER.h 
+
+- add Geeetech thermistor table as 14 in thermistortables.h
+
+- Modfication of DEFAULT_STEPPER_DEACTIVE_TIME SD_FINISHED_STEPPERRELEASE SD_FINISHED_RELEASECOMMAND in Configuration_adv.h
+
+- add constants SIN_tower1, SIN_tower2, SIN_tower2, SIN_tower2 in Configuration.h, to change geometry description without modification of the Marlin_main.cpp
+  use of theses constants in marlin_main.cpp
+
+- add DELTA_DIAGONAL_ROD_TRIM_TOWER_X in Configuration.h
+
+- modify M401 and M402 in marlin_main.cpp to be blocking for use in gcode scripts (not a bug but usefull)
+
+- modify gcode_G29() in marlin_main.cpp (not a bug) to avoid unpredictable behavior if z_probe is not deployed. (If the probe should not deployed correctly between probes there may be yet some unpredictable behavior)
+
+- modify gcode_T() in marlin_main.cpp to supress a bug in use of G29 AND two extruders
+
+- modify default_version.h to change build name to "1.1.0-RC3 mod G2S"
+
+- modification on DELTA_CALIBRATION_MENU : add submenu for the choice of final height, modify command for low speed on final move
+
+- add of LEDSTRIP support with Fastled library, modification of M150 GCODE, add of a specific LCD menu
+
+- correction of M503 for M665 parameters
+
+ Further description may be found on the [forum](http://3dprinters.proboards.com/board/3/geeetech-g2-g2s-pro).
+
+ 
+ Additional documentation on Marlin can be found in [the  wiki](https://github.com/MarlinFirmware/Marlin/wiki/Main-Page).
 
 ## Release Candidate -- Marlin 1.1.0-RC3 - 01 December 2015
 
