@@ -29,21 +29,21 @@ in configuration.h :
 
   // Diagonal rod length adjustment
   // parameters maybe change by gcode M665 A B C
-    #define DELTA_DIAGONAL_ROD_TRIM_TOWER_1 0.0
-    #define DELTA_DIAGONAL_ROD_TRIM_TOWER_2 0.0
-    #define DELTA_DIAGONAL_ROD_TRIM_TOWER_3 0.0
+    - #define DELTA_DIAGONAL_ROD_TRIM_TOWER_1 0.0
+    - #define DELTA_DIAGONAL_ROD_TRIM_TOWER_2 0.0
+    - #define DELTA_DIAGONAL_ROD_TRIM_TOWER_3 0.0
  
   // Diagonal radius length adjustment
   // parameters maybe change by gcode M665 D E F (specific)
-    #define DELTA_RADIUS_TRIM_TOWER_1 0.0
-    #define DELTA_RADIUS_TRIM_TOWER_2 0.0
-    #define DELTA_RADIUS_TRIM_TOWER_3 0.0
+    - #define DELTA_RADIUS_TRIM_TOWER_1 0.0
+    - #define DELTA_RADIUS_TRIM_TOWER_2 0.0
+    - #define DELTA_RADIUS_TRIM_TOWER_3 0.0
     
   // Diagonal angle length adjustment
   // parameters maybe change by gcode M665 I J K (specific)
-    #define DELTA_ANGLE_TRIM_TOWER_1 0.0
-    #define DELTA_ANGLE_TRIM_TOWER_2 0.0
-    #define DELTA_ANGLE_TRIM_TOWER_3 0.0
+    - #define DELTA_ANGLE_TRIM_TOWER_1 0.0
+    - #define DELTA_ANGLE_TRIM_TOWER_2 0.0
+    - #define DELTA_ANGLE_TRIM_TOWER_3 0.0
    ?
 
 Main modification merged from the main branch :
