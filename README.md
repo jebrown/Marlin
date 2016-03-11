@@ -1,4 +1,5 @@
-# Marlin 3D Printer Firmware
+# Marlin 3D Printer Firmware For Delta Geeetech G2S G2S PRO
+<img align="top" width=175 src="Documentation/Logo/g2spro.jpg" />
 <img align="top" width=175 src="Documentation/Logo/Marlin%20Logo%20GitHub.png" />
  Additional documentation can be found in [our wiki](https://github.com/MarlinFirmware/Marlin/wiki/Main-Page).
 
