@@ -45,7 +45,8 @@ in configuration.h :
     #define DELTA_ANGLE_TRIM_TOWER_2 0.0
     #define DELTA_ANGLE_TRIM_TOWER_3 0.0
    ?
- Main modification merged from the main branch :
+
+Main modification merged from the main branch :
 
 - modifications on pins_ULTIMAKER.h 
 
@@ -53,10 +54,7 @@ in configuration.h :
 
 - Modfication of DEFAULT_STEPPER_DEACTIVE_TIME SD_FINISHED_STEPPERRELEASE SD_FINISHED_RELEASECOMMAND in Configuration_adv.h
 
-- add constants SIN_tower1, SIN_tower2, SIN_tower2, SIN_tower2 in Configuration.h, to change geometry description without modification of the Marlin_main.cpp
-  use of theses constants in marlin_main.cpp
-
-- add DELTA_DIAGONAL_ROD_TRIM_TOWER_X in Configuration.h
+- - add DELTA_DIAGONAL_ROD_TRIM_TOWER_X in Configuration.h
 
 - modify M401 and M402 in marlin_main.cpp to be blocking for use in gcode scripts (not a bug but usefull)
 
