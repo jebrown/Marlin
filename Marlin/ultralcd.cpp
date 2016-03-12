@@ -828,8 +828,23 @@ static void lcd_prepare_menu() {
     delta_finalcalib();
   }
   
+ void delta_calibreta_xz () {
+    enqueuecommands_P(( PSTR("G0 F8000 X-77.94 Y45 Z10")));
+    delta_finalcalib();
+  }
+  
   void delta_calibreta_y () {
     enqueuecommands_P(( PSTR("G0 F8000 X77.94 Y-45 Z10")));
+     delta_finalcalib();
+  }
+  
+   void delta_calibreta_yz () {
+    enqueuecommands_P(( PSTR("G0 F8000 X77.94 Y45 Z10")));
+     delta_finalcalib();
+  }
+  
+   void delta_calibreta_xy () {
+    enqueuecommands_P(( PSTR("G0 F8000 X0 Y-60 Z10")));
      delta_finalcalib();
   }
   
@@ -852,6 +867,9 @@ static void lcd_prepare_menu() {
     MENU_ITEM(function, MSG_DELTA_CALIBRATE_X, delta_calibreta_x);
     MENU_ITEM(function, MSG_DELTA_CALIBRATE_Y, delta_calibreta_y);
     MENU_ITEM(function, MSG_DELTA_CALIBRATE_Z, delta_calibreta_z);
+    MENU_ITEM(function, MSG_DELTA_CALIBRATE_X "Y", delta_calibreta_xy);
+    MENU_ITEM(function, MSG_DELTA_CALIBRATE_X "Z", delta_calibreta_xz);
+    MENU_ITEM(function, MSG_DELTA_CALIBRATE_Y "Z", delta_calibreta_yz);
     MENU_ITEM(function, MSG_DELTA_CALIBRATE_CENTER, delta_calibreta_c);
     END_MENU();
   }
@@ -1026,16 +1044,20 @@ static void lcd_move_menu() {
   void lcd_led_powerhalf () {
     lcd_led_command(LED_POWERHALF);
   }
+ #define LED_SEGMENT_MSG "LED SEGMENT "
+ #define LED_POWER_ON_MSG    "LED POWER ON"
+ #define LED_POWER_HALF_MSG  "LED POWER HALF"
+ #define LED_POWER_OFF_MSG   "LED POWER OFF"
   
   static void lcd_led_lighting() {
 
     START_MENU();
     MENU_ITEM(back, MSG_MAIN, lcd_main_menu);
-    MENU_ITEM_EDIT(int3, "LED SEGMENT ", &ledstrip_segment, 0, LEDSTRIP_NSEGMENT );
+    MENU_ITEM_EDIT(int3,LED_SEGMENT_MSG , &ledstrip_segment, 0, LEDSTRIP_NSEGMENT );
     
-    MENU_ITEM(function, "LED POWER ON", lcd_led_poweron);  
-    MENU_ITEM(function, "LED POWER HALF", lcd_led_powerhalf);  
-    MENU_ITEM(function, "LED POWER OFF", lcd_led_poweroff);  
+    MENU_ITEM(function,LED_POWER_ON_MSG , lcd_led_poweron);  
+    MENU_ITEM(function,LED_POWER_HALF_MSG , lcd_led_powerhalf);  
+    MENU_ITEM(function,LED_POWER_OFF_MSG , lcd_led_poweroff);  
 
     END_MENU();
   }

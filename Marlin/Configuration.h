@@ -379,7 +379,7 @@ Here are some standard links for getting your machine calibrated:
   #define COS_tower2 -COS_60
 
   // Diagonal rod length adjustment 
-  // the other parameters maybe change by gcode M665 A B C...
+  // parameters maybe change by gcode M665 A B C
     #define DELTA_DIAGONAL_ROD_TRIM_TOWER_1 0.0
     #define DELTA_DIAGONAL_ROD_TRIM_TOWER_2 0.0
     #define DELTA_DIAGONAL_ROD_TRIM_TOWER_3 0.0
