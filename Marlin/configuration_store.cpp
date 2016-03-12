@@ -700,12 +700,13 @@ void Config_PrintSettings(bool forReplay) {
   #if ENABLED(DELTA)
     CONFIG_ECHO_START;
     if (!forReplay) {
-      SERIAL_ECHOLNPGM("Endstop adjustment (mm):");
+      SERIAL_ECHOLNPGM("Endstop adjustment (mm)  height (mm) :");
       CONFIG_ECHO_START;
     }
     SERIAL_ECHOPAIR("  M666 X", endstop_adj[X_AXIS]);
     SERIAL_ECHOPAIR(" Y", endstop_adj[Y_AXIS]);
     SERIAL_ECHOPAIR(" Z", endstop_adj[Z_AXIS]);
+    SERIAL_ECHOPAIR(" H", max_pos[Z_AXIS]);
     SERIAL_EOL;
     CONFIG_ECHO_START;
     if (!forReplay) {
