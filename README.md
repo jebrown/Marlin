@@ -36,6 +36,10 @@ __No garantee whatsoever – use with caution!__
 
 - Add three points to delta calibrate menu
 
+- add parameters to G30 :
+  + I : number of iteration for repeatability  computations compute mean height and difference sigma 
+  + C : print steps on each tower at each z_probe stop
+
  Further description may be found on the [forum](http://3dprinters.proboards.com/board/3/geeetech-g2-g2s-pro).
 
  
