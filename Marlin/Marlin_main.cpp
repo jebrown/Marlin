@@ -3247,31 +3247,130 @@ inline void gcode_G28() {
 
   #if DISABLED(Z_PROBE_SLED)
 
-    /**
+    /*****************************************************************************************
+     * 
      * G30: Do a single Z probe at the current XY
-     */
+     * 
+     *    I : number of iteration for reapetability computations
+     *        compute means height and total sigma 
+     *    C : print steps on each tower at each z_probe stop
+     *    
+     ******************************************************************************************/
+     
     inline void gcode_G30() {
+      int     iterations = 1 ;
+      boolean showsteps  = false ;
+
+      if (code_seen('I')) {
+        iterations = code_value_short();
+        if (iterations <1 || iterations >50){
+           iterations = 1;
+           SERIAL_ERROR_START;
+           SERIAL_ERRORLNPGM("bad number of iterations");
+        }
+      }
+
+      if (code_seen('C')) {
+        showsteps = true;
+      }
+      
+      // array of result positions
+      float Z_end_positions [iterations];
+      
       #if HAS_SERVO_ENDSTOPS
         raise_z_for_servo();
       #endif
       deploy_z_probe(); // Engage Z Servo endstop if available
 
+      boolean probestate=true;
+      #if HAS_Z_MIN
+        probestate=READ(Z_MIN_PIN)^Z_MIN_ENDSTOP_INVERTING;
+      #endif
+      #ifdef Z_PROBE_ENDSTOP
+        probestate=READ(Z_PROBE_PIN)^Z_PROBE_ENDSTOP_INVERTING;
+      #endif
+
+      if (probestate){      // test the probe state  state                         
+        LCD_MESSAGEPGM(MSG_PROBE_NOT_DEPLOYED);
+        SERIAL_ECHO_START;
+        SERIAL_ECHOLN(MSG_PROBE_NOT_DEPLOYED);
+        return;
+      }
+
       st_synchronize();
-      // TODO: clear the leveling matrix or the planner will be set incorrectly
+      // TODO: clear the leveling matrix or the planner will be set incorrectly ZZZZ is it right ?
+      // make sure the bed_level_rotation_matrix is identity or the planner will get it wrong
+      plan_bed_level_matrix.set_to_identity();
+
       setup_for_endstop_move();
 
+       if (showsteps)
+         SERIAL_ECHOLNPGM("i \tTX\tTy\tTz\t steps");
+        
+      //first move to good height
       feedrate = homing_feedrate[Z_AXIS];
+  
+      if (Z_RAISE_AFTER_PROBING>0 )
+          do_blocking_move_to_z( Z_RAISE_AFTER_PROBING);
 
-      run_z_probe();
+      for (int i=0; i<iterations;i++){
+  
+        run_z_probe();
+        
+        Z_end_positions[i]= current_position[Z_AXIS];
+
+        if (showsteps){
+          SERIAL_ECHO(i+1);
+          SERIAL_ECHOPAIR("\t", st_get_position(X_AXIS));
+          SERIAL_ECHOPAIR("\t", st_get_position(Y_AXIS));
+          SERIAL_ECHOPAIR("\t", st_get_position(Z_AXIS));
+          SERIAL_EOL;
+       }
+        
+        feedrate = homing_feedrate[Z_AXIS];
+        raise_z_after_probing();
+      }
+      clean_up_after_endstop_move();
+      
+      if (showsteps){
+         SERIAL_EOL;
+      }
+     
       SERIAL_PROTOCOLPGM("Bed X: ");
       SERIAL_PROTOCOL(current_position[X_AXIS] + 0.0001);
       SERIAL_PROTOCOLPGM(" Y: ");
       SERIAL_PROTOCOL(current_position[Y_AXIS] + 0.0001);
-      SERIAL_PROTOCOLPGM(" Z: ");
-      SERIAL_PROTOCOL(current_position[Z_AXIS] + 0.0001);
+      SERIAL_PROTOCOLPGM(" Z:");
+      for (int i=0; i<iterations;i++){
+       SERIAL_ECHOPAIR(" ",Z_end_positions[i] + 0.0001);
+      }
       SERIAL_EOL;
-
-      clean_up_after_endstop_move();
+      if (iterations >1){
+        float sum,mean,sigma;
+        //
+        // Get the current mean for the data points we have so far
+        //
+        sum = 0.0;
+        for (uint8_t j = 0; j < iterations; j++) sum += Z_end_positions[j];
+        mean = sum / iterations;
+  
+        //
+        // Now, use that mean to calculate the standard deviation for the
+        // data points we have so far
+        //
+        sum = 0.0;
+        for (uint8_t j = 0; j < iterations; j++) {
+          float ss = Z_end_positions[j] - mean;
+          sum += ss * ss;
+        }
+        sigma = sqrt(sum / iterations);
+        
+        SERIAL_ECHOPGM("Mean result: ");
+        SERIAL_PROTOCOL_F(mean, 4);
+        SERIAL_ECHOPGM(" Sigma: ");
+        SERIAL_PROTOCOL_F(sigma, 4);
+        SERIAL_EOL;
+      }
 
       #if HAS_SERVO_ENDSTOPS
         raise_z_for_servo();
