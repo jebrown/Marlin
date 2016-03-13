@@ -5,7 +5,7 @@
 ## Specific version (slightly) modified for easy use on G2 G2S printer
 __No garantee whatsoever – use with caution!__
  
- Compiled and tested on a G2S PRO. Last version of 07 march 2016.
+ Compiled and tested on a G2S PRO. Last version of 13  march 2016.
 
  Main modification :
 
@@ -33,6 +33,8 @@ __No garantee whatsoever – use with caution!__
 - add of LEDSTRIP support with Fastled library, modification of M150 GCODE, add of a specific LCD menu
 
 - correction of M503 for M665 parameters
+
+- Add three points to delta calibrate menu
 
  Further description may be found on the [forum](http://3dprinters.proboards.com/board/3/geeetech-g2-g2s-pro).
 
