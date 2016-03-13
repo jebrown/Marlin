@@ -74,6 +74,10 @@ Main modification merged from the main branch :
 
 - add H parameter to M666 to change maximum Height
 
+- add parameters to G30 :
+  + I : number of iteration for reapetability computations compute means height and total sigma 
+  + C : print steps on each tower at each z_probe stop
+
  Further description may be found on the [forum](http://3dprinters.proboards.com/board/3/geeetech-g2-g2s-pro).
 
  
