@@ -3,7 +3,7 @@
 <img align="top" width=175 src="Documentation/Logo/Marlin%20Logo%20GitHub.png" />
 
 ## Specific version (slightly) modified for easy use on G2 G2S printer
-__No garantee whatsoever – use with caution!__
+__No guarantee whatsoever – use with caution!__
  
  Compiled and tested on a G2S PRO. Last version of 14  march 2016.
 
