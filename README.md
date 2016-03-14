@@ -3,9 +3,9 @@
 <img align="top" width=175 src="Documentation/Logo/Marlin%20Logo%20GitHub.png" />
 
 ## Specific version (slightly) modified for easy use on G2 G2S printer
-__No garantee whatsoever – use with caution!__
+__No guarantee whatsoever – use with caution!__
  
- Compiled and tested on a G2S PRO. Last version of 13 march 2016.
+ Compiled and tested on a G2S PRO. Last version of 14 march 2016.
 
 This specific branch contains all the modifications made on the RC3 version of Marlin plus a port of the RichCattel version of Marlin with very  nice functionalities for auto calibration of Delta printers :
 https://groups.google.com/forum/#!topic/deltabot/SrmxHMxdgBE[1-25]
@@ -17,8 +17,9 @@ As the G30 code was already taken in marlin (by a one shot z-probe test), I have
 "G40 A"  which should make the entire calibration 
 
 Two new parameters have been added to G40 :
-I : maximum number of iteration (by default 100)
-P : target precision (by default 0.03 mm)
+  + I : maximum number of iteration (by default 100)
+  + P : target precision (by default 0.03 mm)
+  + Q : divider for the speed of final z_probe approach (from 2 quick, to 50 very slow)
 
  
 This firmware supports M665 A B C (but it is not to modify tower angles as original RichCattel version but diagonal rod length).
@@ -77,6 +78,9 @@ Main modification merged from the main branch :
 - add parameters to G30 :
   + I : number of iteration for repeatability  computations compute mean height and difference sigma 
   + C : print steps on each tower at each z_probe stop
+  + Q : divider for the speed of final z_probe approach (from 2 quick, to 50 very slow)
+
+- add Q parameter to G29
 
  Further description may be found on the [forum](http://3dprinters.proboards.com/board/3/geeetech-g2-g2s-pro).
 
