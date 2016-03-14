@@ -1296,7 +1296,7 @@ static void setup_for_endstop_move() {
 
   #endif // !AUTO_BED_LEVELING_GRID
 
-  static void run_z_probe() {
+  static void run_z_probe(byte divider = 4) {
 
     #if ENABLED(DELTA)
 
@@ -1310,7 +1310,7 @@ static void setup_for_endstop_move() {
       #endif
 
       // move down slowly until you find the bed
-      feedrate = homing_feedrate[Z_AXIS] / 4;
+      feedrate = homing_feedrate[Z_AXIS] / divider;
       destination[Z_AXIS] = -10;
       prepare_move_raw(); // this will also set_current_to_destination
       st_synchronize();
@@ -1622,7 +1622,7 @@ static void setup_for_endstop_move() {
   };
 
   // Probe bed height at position (x,y), returns the measured z value
-  static float probe_pt(float x, float y, float z_before, ProbeAction probe_action = ProbeDeployAndStow, int verbose_level = 1) {
+  static float probe_pt(float x, float y, float z_before, ProbeAction probe_action = ProbeDeployAndStow, int verbose_level = 1, byte divider = 4) {
     #if ENABLED(DEBUG_LEVELING_FEATURE)
       if (marlin_debug_flags & DEBUG_LEVELING) {
         SERIAL_ECHOLNPGM("probe_pt >>>");
@@ -1665,7 +1665,7 @@ static void setup_for_endstop_move() {
       }
     #endif
 
-    run_z_probe();
+    run_z_probe(divider);
     float measured_z = current_position[Z_AXIS];
 
     #if DISABLED(Z_PROBE_SLED) && DISABLED(Z_PROBE_ALLEN_KEY)
@@ -2801,6 +2801,8 @@ inline void gcode_G28() {
    */
   inline void gcode_G29() {
 
+    byte divider=4;
+
     #if ENABLED(DEBUG_LEVELING_FEATURE)
       if (marlin_debug_flags & DEBUG_LEVELING) {
         SERIAL_ECHOLNPGM("gcode_G29 >>>");
@@ -2823,6 +2825,15 @@ inline void gcode_G28() {
 
     bool dryrun = code_seen('D'),
          deploy_probe_for_each_reading = code_seen('E');
+
+     if (code_seen('Q')) {
+        divider = code_value_short();
+        if (divider <2 || divider >50){
+           SERIAL_ERROR_START;
+           SERIAL_ERRORLNPGM("bad divider");
+           return;
+        }
+      }
 
     #if ENABLED(AUTO_BED_LEVELING_GRID)
 
@@ -3019,7 +3030,7 @@ inline void gcode_G28() {
           else
             act = ProbeStay;
 
-          measured_z = probe_pt(xProbe, yProbe, z_before, act, verbose_level);
+          measured_z = probe_pt(xProbe, yProbe, z_before, act, verbose_level,divider);
 
           #if DISABLED(DELTA)
             mean += measured_z;
@@ -3156,7 +3167,7 @@ inline void gcode_G28() {
         p1 = ProbeDeploy, p2 = ProbeStay, p3 = ProbeStow;
 
       // Probe at 3 arbitrary points
-      float z_at_pt_1 = probe_pt(ABL_PROBE_PT_1_X, ABL_PROBE_PT_1_Y, Z_RAISE_BEFORE_PROBING, p1, verbose_level),
+      float z_at_pt_1 = probe_pt(ABL_PROBE_PT_1_X, ABL_PROBE_PT_1_Y, Z_RAISE_BEFORE_PROBING, p1, verbose_level,divider),
             z_at_pt_2 = probe_pt(ABL_PROBE_PT_2_X, ABL_PROBE_PT_2_Y, current_position[Z_AXIS] + Z_RAISE_BETWEEN_PROBINGS, p2, verbose_level),
             z_at_pt_3 = probe_pt(ABL_PROBE_PT_3_X, ABL_PROBE_PT_3_Y, current_position[Z_AXIS] + Z_RAISE_BETWEEN_PROBINGS, p3, verbose_level);
       clean_up_after_endstop_move();
@@ -3266,15 +3277,25 @@ inline void gcode_G28() {
      * G30: Do a single Z probe at the current XY
      * 
      *    I : number of iteration for reapetability computations
-     *        compute means height and total sigma 
+     *        compute mean height and distribution sigma 
      *    C : print steps on each tower at each z_probe stop
+     *    Q : divider for test speed  (2 to 50) 4 by default
      *    
      ******************************************************************************************/
      
     inline void gcode_G30() {
       int     iterations = 1 ;
       boolean showsteps  = false ;
+      byte    divider = 4;
 
+      if (code_seen('Q')) {
+        divider = code_value_short();
+        if (divider <2 || divider >50){
+           SERIAL_ERROR_START;
+           SERIAL_ERRORLNPGM("bad divider");
+           return;
+        }
+      }
       if (code_seen('I')) {
         iterations = code_value_short();
         if (iterations <1 || iterations >50){
@@ -3318,9 +3339,14 @@ inline void gcode_G28() {
 
       setup_for_endstop_move();
 
-       if (showsteps)
+      if (showsteps){
+         if (iterations>1){
+          SERIAL_ECHOPAIR("G30 Repeatability test : ", iterations);
+          SERIAL_ECHOPAIR(" speed divider : ", divider);
+          SERIAL_ECHOLN("");
+         }
          SERIAL_ECHOLNPGM("i \tTX\tTy\tTz\t steps");
-        
+      }
       //first move to good height
       feedrate = homing_feedrate[Z_AXIS];
   
@@ -3329,7 +3355,7 @@ inline void gcode_G28() {
 
       for (int i=0; i<iterations;i++){
   
-        run_z_probe();
+        run_z_probe(divider);
         
         Z_end_positions[i]= current_position[Z_AXIS];
 
@@ -3425,62 +3451,63 @@ inline void gcode_G28() {
       #endif
 
 
-void home_delta_axis() {
-    saved_feedrate = feedrate;
-    saved_feedmultiply = feedmultiply;
-    feedmultiply = 100;
-    previous_millis_cmd = millis();
+    void home_delta_axis() {
+      
+        saved_feedrate = feedrate;
+        saved_feedmultiply = feedmultiply;
+        feedmultiply = 100;
+        previous_millis_cmd = millis();
+    
+        enable_endstops(true);
+    
+        for(int8_t i=0; i < NUM_AXIS; i++) {
+          destination[i] = current_position[i];
+          }
+        feedrate = 0.0;
+        // Move all carriages up together until the first endstop is hit.
+        current_position[X_AXIS] = 0;
+        current_position[Y_AXIS] = 0;
+        current_position[Z_AXIS] = 0;
+        plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
+    
+        destination[X_AXIS] = 3 * max_length[Z_AXIS];
+        destination[Y_AXIS] = 3 * max_length[Z_AXIS];
+        destination[Z_AXIS] = 3 * max_length[Z_AXIS];
+        feedrate = 1.732 * homing_feedrate[X_AXIS];
+        plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/60, active_extruder);
+        st_synchronize();
+        endstops_hit_on_purpose();
+    
+        current_position[X_AXIS] = destination[X_AXIS];
+        current_position[Y_AXIS] = destination[Y_AXIS];
+        current_position[Z_AXIS] = destination[Z_AXIS];
+    
+        // take care of back off and rehome now we are all at the top
+        HOMEAXIS(X);
+        HOMEAXIS(Y);
+        HOMEAXIS(Z);
+    
+        calculate_delta(current_position);
+        plan_set_position(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], current_position[E_AXIS]);   
+    
+        #ifdef ENDSTOPS_ONLY_FOR_HOMING
+           enable_endstops(false);
+        #endif
+    
+        feedrate = saved_feedrate;
+        feedmultiply = saved_feedmultiply;
+        previous_millis_cmd = millis();
+        endstops_hit_on_purpose(); 
+    }
 
-    enable_endstops(true);
-
-    for(int8_t i=0; i < NUM_AXIS; i++) {
-      destination[i] = current_position[i];
-      }
-    feedrate = 0.0;
-    // Move all carriages up together until the first endstop is hit.
-    current_position[X_AXIS] = 0;
-    current_position[Y_AXIS] = 0;
-    current_position[Z_AXIS] = 0;
-    plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
-
-    destination[X_AXIS] = 3 * max_length[Z_AXIS];
-    destination[Y_AXIS] = 3 * max_length[Z_AXIS];
-    destination[Z_AXIS] = 3 * max_length[Z_AXIS];
-    feedrate = 1.732 * homing_feedrate[X_AXIS];
-    plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/60, active_extruder);
-    st_synchronize();
-    endstops_hit_on_purpose();
-
-    current_position[X_AXIS] = destination[X_AXIS];
-    current_position[Y_AXIS] = destination[Y_AXIS];
-    current_position[Z_AXIS] = destination[Z_AXIS];
-
-    // take care of back off and rehome now we are all at the top
-    HOMEAXIS(X);
-    HOMEAXIS(Y);
-    HOMEAXIS(Z);
-
-    calculate_delta(current_position);
-    plan_set_position(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], current_position[E_AXIS]);   
-
-    #ifdef ENDSTOPS_ONLY_FOR_HOMING
-       enable_endstops(false);
-    #endif
-
-    feedrate = saved_feedrate;
-    feedmultiply = saved_feedmultiply;
-    previous_millis_cmd = millis();
-    endstops_hit_on_purpose(); 
-}
-
-void save_carriage_positions(int position_num) {
-  for(int8_t i=0; i < NUM_AXIS; i++) {
-    saved_positions[position_num][i] = saved_position[i];    
-  }
-}
+    void save_carriage_positions(int position_num) {
+        for(int8_t i=0; i < NUM_AXIS; i++) {
+          saved_positions[position_num][i] = saved_position[i];    
+        }
+    }
 
 
-float z_probe() {
+float z_probe(byte divider ) {
   feedrate = homing_feedrate[X_AXIS];
   prepare_move_raw();
   st_synchronize();
@@ -3489,7 +3516,7 @@ float z_probe() {
   float start_z = current_position[Z_AXIS];
   long start_steps = st_get_position(Z_AXIS);
 
-  feedrate = homing_feedrate[Z_AXIS]/10;
+  feedrate = homing_feedrate[Z_AXIS]/divider;
   destination[Z_AXIS] = -20;
   prepare_move_raw();
   st_synchronize();
@@ -3519,7 +3546,7 @@ float z_probe() {
   return mm;
 }
 
-float probe_bed(float x, float y)
+float probe_bed(float x, float y,byte divider)
   {
   //Probe bed at specified location and return z height of bed
   float probe_bed_z, probe_z, probe_h, probe_l;
@@ -3537,7 +3564,7 @@ float probe_bed(float x, float y)
   probe_l = 100;
   do {
     probe_bed_z = probe_z;
-    probe_z = z_probe() + z_probe_offset[Z_AXIS];
+    probe_z = z_probe(divider) + z_probe_offset[Z_AXIS];
     if (probe_z > probe_h) probe_h = probe_z;
     if (probe_z < probe_l) probe_l = probe_z;
     probe_count ++;
@@ -3573,22 +3600,22 @@ float probe_bed(float x, float y)
   return probe_bed_z;
   }
   
-void bed_probe_all()
+void bed_probe_all(byte divider)
   {
   //Probe all bed positions & store carriage positions
-  bed_level_c = probe_bed(0.0, 0.0);      
+  bed_level_c = probe_bed(0.0, 0.0, divider);      
   save_carriage_positions(0);
-  bed_level_z = probe_bed(0.0, bed_radius);
+  bed_level_z = probe_bed(0.0, bed_radius, divider);
   save_carriage_positions(1);
-  bed_level_oy = probe_bed(-SIN_60 * bed_radius, COS_60 * bed_radius);
+  bed_level_oy = probe_bed(-SIN_60 * bed_radius, COS_60 * bed_radius, divider);
   save_carriage_positions(2);
-  bed_level_x = probe_bed(-SIN_60 * bed_radius, -COS_60 * bed_radius);
+  bed_level_x = probe_bed(-SIN_60 * bed_radius, -COS_60 * bed_radius, divider);
   save_carriage_positions(3);
-  bed_level_oz = probe_bed(0.0, -bed_radius);
+  bed_level_oz = probe_bed(0.0, -bed_radius, divider);
   save_carriage_positions(4);
-  bed_level_y = probe_bed(SIN_60 * bed_radius, -COS_60 * bed_radius);
+  bed_level_y = probe_bed(SIN_60 * bed_radius, -COS_60 * bed_radius, divider);
   save_carriage_positions(5);
-  bed_level_ox = probe_bed(SIN_60 * bed_radius, COS_60 * bed_radius);
+  bed_level_ox = probe_bed(SIN_60 * bed_radius, COS_60 * bed_radius, divider);
   save_carriage_positions(6);    
   }
 
@@ -3667,13 +3694,15 @@ void bed_probe_all()
    *
    *  D . size of diagonal rods, wont't be adjusted by this function
    *
+   *  Q : divider for test speed  (2 to 50) 4 by default
+   *
    *
    **********************************************************************************************************/
  
     inline void gcode_G40() {
 
       int iterations = 100;
-
+      byte divider   = 10;
 
      if (AUTO_BED_LEVELING_GRID_POINTS !=7){
           SERIAL_ERROR_START;
@@ -3700,6 +3729,15 @@ void bed_probe_all()
            ac_prec= AUTOCALIBRATION_PRECISION /2;
          }
       } 
+      
+      if (code_seen('Q')) {
+        divider = code_value_short();
+        if (divider <2 || divider >50){
+           SERIAL_ERROR_START;
+           SERIAL_ERRORLNPGM("bad divider");
+           return;
+        }
+      }
       
       if (code_seen('C'))
         {
@@ -3744,7 +3782,7 @@ void bed_probe_all()
             return;
           }
           
-          probe_value = probe_bed(x, y);
+          probe_value = probe_bed(x, y, divider);
           SERIAL_ECHOPGM("Bed Z-Height at X:");
           SERIAL_ECHO(x);
           SERIAL_ECHOPGM(" Y:");
@@ -3802,7 +3840,7 @@ void bed_probe_all()
         return;
       }      
        //Probe all points
-       bed_probe_all();
+       bed_probe_all(divider);
       
        //Show calibration report      
        calibration_report();
@@ -3823,6 +3861,7 @@ void bed_probe_all()
          float probe_error, ftemp;
 
          SERIAL_ECHOPAIR("Max iteration: ", iterations);
+         SERIAL_ECHOPAIR(" speed Q: ", divider);
          SERIAL_ECHOPGM(" target error: ");
          SERIAL_PROTOCOL_F(ac_prec, 4);
          SERIAL_ECHOLNPGM("mm");
@@ -3965,7 +4004,7 @@ void bed_probe_all()
        
                      set_delta_constants();              
                           
-                     bed_probe_all();
+                     bed_probe_all(divider);
                      calibration_report();
                      
                      //Check to see if autocal is complete to within limits..
@@ -4161,7 +4200,7 @@ void bed_probe_all()
                   home_delta_axis();
                 
                   //probe bed and display report
-                  bed_probe_all();
+                  bed_probe_all(divider);
                   calibration_report();
 
                   //Check to see if autocal is complete to within limits..
