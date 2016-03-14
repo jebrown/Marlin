@@ -1282,7 +1282,7 @@ static void setup_for_endstop_move() {
 
   #endif // !AUTO_BED_LEVELING_GRID
 
-  static void run_z_probe() {
+  static void run_z_probe(byte divider = 4) {
 
     #if ENABLED(DELTA)
 
@@ -1296,7 +1296,7 @@ static void setup_for_endstop_move() {
       #endif
 
       // move down slowly until you find the bed
-      feedrate = homing_feedrate[Z_AXIS] / 4;
+      feedrate = homing_feedrate[Z_AXIS] / divider;
       destination[Z_AXIS] = -10;
       prepare_move_raw(); // this will also set_current_to_destination
       st_synchronize();
@@ -1608,7 +1608,7 @@ static void setup_for_endstop_move() {
   };
 
   // Probe bed height at position (x,y), returns the measured z value
-  static float probe_pt(float x, float y, float z_before, ProbeAction probe_action = ProbeDeployAndStow, int verbose_level = 1) {
+  static float probe_pt(float x, float y, float z_before, ProbeAction probe_action = ProbeDeployAndStow, int verbose_level = 1, byte divider = 4) {
     #if ENABLED(DEBUG_LEVELING_FEATURE)
       if (marlin_debug_flags & DEBUG_LEVELING) {
         SERIAL_ECHOLNPGM("probe_pt >>>");
@@ -1651,7 +1651,7 @@ static void setup_for_endstop_move() {
       }
     #endif
 
-    run_z_probe();
+    run_z_probe(divider);
     float measured_z = current_position[Z_AXIS];
 
     #if DISABLED(Z_PROBE_SLED) && DISABLED(Z_PROBE_ALLEN_KEY)
@@ -2787,6 +2787,8 @@ inline void gcode_G28() {
    */
   inline void gcode_G29() {
 
+    byte divider=4;
+
     #if ENABLED(DEBUG_LEVELING_FEATURE)
       if (marlin_debug_flags & DEBUG_LEVELING) {
         SERIAL_ECHOLNPGM("gcode_G29 >>>");
@@ -2809,6 +2811,15 @@ inline void gcode_G28() {
 
     bool dryrun = code_seen('D'),
          deploy_probe_for_each_reading = code_seen('E');
+
+     if (code_seen('Q')) {
+        divider = code_value_short();
+        if (divider <2 || divider >50){
+           SERIAL_ERROR_START;
+           SERIAL_ERRORLNPGM("bad divider");
+           return;
+        }
+      }
 
     #if ENABLED(AUTO_BED_LEVELING_GRID)
 
@@ -3005,7 +3016,7 @@ inline void gcode_G28() {
           else
             act = ProbeStay;
 
-          measured_z = probe_pt(xProbe, yProbe, z_before, act, verbose_level);
+          measured_z = probe_pt(xProbe, yProbe, z_before, act, verbose_level,divider);
 
           #if DISABLED(DELTA)
             mean += measured_z;
@@ -3142,7 +3153,7 @@ inline void gcode_G28() {
         p1 = ProbeDeploy, p2 = ProbeStay, p3 = ProbeStow;
 
       // Probe at 3 arbitrary points
-      float z_at_pt_1 = probe_pt(ABL_PROBE_PT_1_X, ABL_PROBE_PT_1_Y, Z_RAISE_BEFORE_PROBING, p1, verbose_level),
+      float z_at_pt_1 = probe_pt(ABL_PROBE_PT_1_X, ABL_PROBE_PT_1_Y, Z_RAISE_BEFORE_PROBING, p1, verbose_level,divider),
             z_at_pt_2 = probe_pt(ABL_PROBE_PT_2_X, ABL_PROBE_PT_2_Y, current_position[Z_AXIS] + Z_RAISE_BETWEEN_PROBINGS, p2, verbose_level),
             z_at_pt_3 = probe_pt(ABL_PROBE_PT_3_X, ABL_PROBE_PT_3_Y, current_position[Z_AXIS] + Z_RAISE_BETWEEN_PROBINGS, p3, verbose_level);
       clean_up_after_endstop_move();
@@ -3252,15 +3263,25 @@ inline void gcode_G28() {
      * G30: Do a single Z probe at the current XY
      * 
      *    I : number of iteration for reapetability computations
-     *        compute means height and total sigma 
+     *        compute mean height and distribution sigma 
      *    C : print steps on each tower at each z_probe stop
+     *    Q : divider for test speed  (2 to 50) 4 by default
      *    
      ******************************************************************************************/
      
     inline void gcode_G30() {
       int     iterations = 1 ;
       boolean showsteps  = false ;
+      byte    divider = 4;
 
+      if (code_seen('Q')) {
+        divider = code_value_short();
+        if (divider <2 || divider >50){
+           SERIAL_ERROR_START;
+           SERIAL_ERRORLNPGM("bad divider");
+           return;
+        }
+      }
       if (code_seen('I')) {
         iterations = code_value_short();
         if (iterations <1 || iterations >50){
@@ -3304,9 +3325,14 @@ inline void gcode_G28() {
 
       setup_for_endstop_move();
 
-       if (showsteps)
+      if (showsteps){
+         if (iterations>1){
+          SERIAL_ECHOPAIR("G30 Repeatability test : ", iterations);
+          SERIAL_ECHOPAIR(" speed divider : ", divider);
+          SERIAL_ECHOLN("");
+         }
          SERIAL_ECHOLNPGM("i \tTX\tTy\tTz\t steps");
-        
+      }
       //first move to good height
       feedrate = homing_feedrate[Z_AXIS];
   
@@ -3315,7 +3341,7 @@ inline void gcode_G28() {
 
       for (int i=0; i<iterations;i++){
   
-        run_z_probe();
+        run_z_probe(divider);
         
         Z_end_positions[i]= current_position[Z_AXIS];
 
