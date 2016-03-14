@@ -5,7 +5,7 @@
 ## Specific version (slightly) modified for easy use on G2 G2S printer
 __No garantee whatsoever – use with caution!__
  
- Compiled and tested on a G2S PRO. Last version of 13  march 2016.
+ Compiled and tested on a G2S PRO. Last version of 14  march 2016.
 
  Main modification :
 
@@ -39,6 +39,9 @@ __No garantee whatsoever – use with caution!__
 - add parameters to G30 :
   + I : number of iteration for repeatability  computations compute mean height and difference sigma 
   + C : print steps on each tower at each z_probe stop
+  + Q : divider for the speed of final z_probe approach (from 2 quick, to 50 very slow)
+
+- add the Q parameter to G29 (same function than for G30)
 
  Further description may be found on the [forum](http://3dprinters.proboards.com/board/3/geeetech-g2-g2s-pro).
 
