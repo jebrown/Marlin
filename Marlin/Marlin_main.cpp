@@ -3425,7 +3425,8 @@ inline void gcode_G28() {
      * 
      * 
      ********************************************************************************************************/
-     
+      #if ENABLED(AUTO_CALIBRATION_FEATURE)
+ 
      int feedmultiply=100; //100->1 200->2
      int saved_feedmultiply;
      float z_probe_offset[3];
@@ -4248,6 +4249,7 @@ void bed_probe_all(byte divider)
         feedmultiply = saved_feedmultiply;
     
     }
+    #endif // ENABLED(AUTO_CALIBRATION_FEATURE)
 
   #endif //!Z_PROBE_SLED
 
@@ -5577,11 +5579,13 @@ inline void gcode_M206() {
         #endif
       }
     }
-    //specific to RichCattel
-    if (code_seen('H')) {
-       max_pos[Z_AXIS]= code_value();
-    }
-    set_delta_constants();
+    #if ENABLED(AUTO_CALIBRATION_FEATURE)
+      //specific to RichCattel
+      if (code_seen('H')) {
+         max_pos[Z_AXIS]= code_value();
+      }
+      set_delta_constants();
+    #endif
 
     #if ENABLED(DEBUG_LEVELING_FEATURE)
       if (marlin_debug_flags & DEBUG_LEVELING) {
@@ -6360,6 +6364,9 @@ inline void gcode_M503() {
       if (Z_PROBE_OFFSET_RANGE_MIN <= value && value <= Z_PROBE_OFFSET_RANGE_MAX) {
         zprobe_zoffset = value;
         SERIAL_ECHOPGM(MSG_OK);
+        #if ENABLED(AUTO_CALIBRATION_FEATURE)
+           set_delta_constants();
+        #endif
       }
       else {
         SERIAL_ECHOPGM(MSG_Z_MIN);
@@ -6851,11 +6858,12 @@ void process_next_command() {
           case 30: // G30 Single Z probe
             gcode_G30();
             break;
-
+        #if ENABLED(AUTO_CALIBRATION_FEATURE)
          case 40: // G30 Single Z probe
             gcode_G40(); //G30 Delta AutoCalibration
             break;
-
+        #endif
+        
         #else // Z_PROBE_SLED
 
             case 31: // G31: dock the sled

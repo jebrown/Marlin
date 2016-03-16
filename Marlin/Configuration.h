@@ -517,11 +517,15 @@ const bool Z_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the logic
 
 #if ENABLED(AUTO_BED_LEVELING_FEATURE)
 
-  // Precision for G30/G40 delta autocalibration function
-  #define AUTOCALIBRATION_PRECISION 0.03 // mm
-  // Diameter of print bed for G30/G40- this is used to set the distance that autocalibration probes the bed at.
-  #define BED_DIAMETER 150 // mm
+  #define AUTO_CALIBRATION_FEATURE
 
+  #if ENABLED(AUTO_CALIBRATION_FEATURE)
+      // Precision for G30/G40 delta autocalibration function
+      #define AUTOCALIBRATION_PRECISION 0.03 // mm
+      // Diameter of print bed for G30/G40- this is used to set the distance that autocalibration probes the bed at.
+      #define BED_DIAMETER 150 // mm
+  #endif  
+  
   // There are 2 different ways to specify probing locations.
   //
   // - "grid" mode
