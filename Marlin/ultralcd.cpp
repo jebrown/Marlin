@@ -909,7 +909,7 @@ static void _lcd_move(const char* name, AxisEnum axis, int min, int max) {
 }
 static void lcd_move_x() { _lcd_move(PSTR(MSG_MOVE_X), X_AXIS, X_MIN_POS, X_MAX_POS); }
 static void lcd_move_y() { _lcd_move(PSTR(MSG_MOVE_Y), Y_AXIS, Y_MIN_POS, Y_MAX_POS); }
-static void lcd_move_z() { _lcd_move(PSTR(MSG_MOVE_Z), Z_AXIS, Z_MIN_POS, Z_MAX_POS); }
+static void lcd_move_z() { _lcd_move(PSTR(MSG_MOVE_Z), Z_AXIS, Z_MIN_POS, max_pos[Z_AXIS] );} /// Z_MAX_POS); }
 static void lcd_move_e(
   #if EXTRUDERS > 1
     uint8_t e
@@ -2271,7 +2271,7 @@ char* ftostr52(const float& x) {
       refresh_cmd_timeout();
       current_position[Z_AXIS] += float((int)encoderPosition) * MBL_Z_STEP;
       if (min_software_endstops && current_position[Z_AXIS] < Z_MIN_POS) current_position[Z_AXIS] = Z_MIN_POS;
-      if (max_software_endstops && current_position[Z_AXIS] > Z_MAX_POS) current_position[Z_AXIS] = Z_MAX_POS;
+      if (max_software_endstops && current_position[Z_AXIS] > max_pos[Z_AXIS] current_position[Z_AXIS] =  max_pos[Z_AXIS];//Z_MAX_POS) current_position[Z_AXIS] = Z_MAX_POS;
       encoderPosition = 0;
       line_to_current(Z_AXIS);
       lcdDrawUpdate = 2;

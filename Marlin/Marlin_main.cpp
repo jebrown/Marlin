@@ -373,10 +373,12 @@ bool target_direction;
                       DELTA_RADIUS_TRIM_TOWER_1, DELTA_RADIUS_TRIM_TOWER_2, DELTA_RADIUS_TRIM_TOWER_3};
   float delta_radius = DELTA_RADIUS;
   float delta_diagonal_rod = DELTA_DIAGONAL_ROD;
+  float delta_segments_per_second = DELTA_SEGMENTS_PER_SECOND;
+
+  
   float delta_diagonal_rod_trim_tower_1 = DELTA_DIAGONAL_ROD_TRIM_TOWER_1;
   float delta_diagonal_rod_trim_tower_2 = DELTA_DIAGONAL_ROD_TRIM_TOWER_2;
   float delta_diagonal_rod_trim_tower_3 = DELTA_DIAGONAL_ROD_TRIM_TOWER_3;
-  float delta_segments_per_second = DELTA_SEGMENTS_PER_SECOND;
   
     // computed datas (same as recalc_delta_settings() )
   float    delta_tower1_x = (delta_radius + tower_adj[3]) * cos((210 + tower_adj[0]) * PI/180); // front left tower
@@ -390,7 +392,6 @@ bool target_direction;
   float delta_diagonal_rod_2_tower_2 = sq(delta_diagonal_rod + delta_diagonal_rod_trim_tower_2);
   float delta_diagonal_rod_2_tower_3 = sq(delta_diagonal_rod + delta_diagonal_rod_trim_tower_3);
 
-  
   #if ENABLED(AUTO_BED_LEVELING_FEATURE)
     int delta_grid_spacing[2] = { 0, 0 };
     float bed_level[AUTO_BED_LEVELING_GRID_POINTS][AUTO_BED_LEVELING_GRID_POINTS];
@@ -3429,7 +3430,7 @@ inline void gcode_G28() {
  
      int feedmultiply=100; //100->1 200->2
      int saved_feedmultiply;
-     float z_probe_offset[3];
+     float z_probe_offset[3]={X_PROBE_OFFSET_FROM_EXTRUDER, Y_PROBE_OFFSET_FROM_EXTRUDER, Z_PROBE_OFFSET_FROM_EXTRUDER};
      
      static float bed_level_x, bed_level_y, bed_level_z;
      static float bed_level_c = 25; //used for inital bed probe safe distance (to avoid crashing into bed)
@@ -3598,7 +3599,7 @@ float probe_bed(float x, float y,byte divider)
   SERIAL_ECHOLN("");      
   */
 
-  return probe_bed_z;
+  return probe_bed_z ;
   }
   
 void bed_probe_all(byte divider)
@@ -3666,17 +3667,19 @@ void bed_probe_all(byte divider)
       SERIAL_ECHOLN("");
   }
 
-
-
-
-   void set_delta_constants(){
+   boolean  set_delta_constants(){
       max_length[Z_AXIS] = max_pos[Z_AXIS] - Z_MIN_POS;
       base_max_pos[Z_AXIS]  = max_pos[Z_AXIS];
       base_home_pos[Z_AXIS] = max_pos[Z_AXIS];
 
+      z_probe_offset [X_AXIS] = X_PROBE_OFFSET_FROM_EXTRUDER ;
+      z_probe_offset [Y_AXIS] = Y_PROBE_OFFSET_FROM_EXTRUDER ;
+      z_probe_offset [Z_AXIS] = zprobe_zoffset ;
+
       recalc_delta_settings(delta_radius,delta_diagonal_rod);
    }
 
+  
    /*********************************************************************************************************
    *
    *  gcode_G40  Auto calibration for Delta Printer
@@ -3697,7 +3700,7 @@ void bed_probe_all(byte divider)
    *
    *  Q : divider for test speed  (2 to 50) 4 by default
    *
-   *
+   *  
    **********************************************************************************************************/
  
     inline void gcode_G40() {
@@ -7391,15 +7394,8 @@ void clamp_to_software_endstops(float target[3]) {
 
 #if ENABLED(DELTA)
 
-  void recalc_delta_settings(float radius, float diagonal_rod) {
-    /*
-    delta_tower1_x = SIN_tower1 * (radius + DELTA_RADIUS_TRIM_TOWER_1);  // front left tower
-    delta_tower1_y = COS_tower1 * (radius + DELTA_RADIUS_TRIM_TOWER_1);
-    delta_tower2_x = SIN_tower2 * (radius + DELTA_RADIUS_TRIM_TOWER_2);  // front right tower
-    delta_tower2_y = COS_tower2 * (radius + DELTA_RADIUS_TRIM_TOWER_2);
-    delta_tower3_x = 0.0;                                             // back middle tower
-    delta_tower3_y = (radius + DELTA_RADIUS_TRIM_TOWER_3);
-    */
+  boolean recalc_delta_settings(float radius, float diagonal_rod) {
+
     delta_tower1_x = (radius + tower_adj[3]) * cos((210 + tower_adj[0]) * PI/180); // front left tower
     delta_tower1_y = (radius + tower_adj[3]) * sin((210 + tower_adj[0]) * PI/180); 
     delta_tower2_x = (radius + tower_adj[4]) * cos((330 + tower_adj[1]) * PI/180); // front right tower
