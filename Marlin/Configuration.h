@@ -103,6 +103,11 @@ Here are some standard links for getting your machine calibrated:
 
 // @section temperature
 
+
+// save and restore geometry parameters for autocalibration
+#define CONFIGURATION_STORE_EXTENSION
+
+
 //===========================================================================
 //============================= Thermal Settings ============================
 //===========================================================================
@@ -376,7 +381,7 @@ Here are some standard links for getting your machine calibrated:
     #define DELTA_ANGLE_TRIM_TOWER_1 0.0
     #define DELTA_ANGLE_TRIM_TOWER_2 0.0
     #define DELTA_ANGLE_TRIM_TOWER_3 0.0
-
+    
 #endif
 
 // Enable this option for Toshiba steppers

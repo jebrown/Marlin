@@ -88,7 +88,16 @@
  * Z_DUAL_ENDSTOPS:
  *  M666 Z    z_endstop_adj
  *
+ **************************************************************************************************
+ *  FOR RC extension
+ *  
+ *  M666 H    max_pos[Z_AXIS]
+ *  
+ *  M665 A B D D E F I J K    geometry description 
+ *  
+ *  
  */
+ 
 #include "Marlin.h"
 #include "language.h"
 #include "planner.h"
@@ -99,6 +108,12 @@
 #if ENABLED(MESH_BED_LEVELING)
   #include "mesh_bed_leveling.h"
 #endif
+
+
+#if ENABLED(CONFIGURATION_STORE_EXTENSION)
+   #define EEPROM_VERSION_extension "RC1"
+#endif
+
 
 void _EEPROM_writeData(int &pos, uint8_t* value, uint8_t size) {
   uint8_t c;
@@ -281,7 +296,34 @@ void Config_StoreSettings()  {
     if (q < EXTRUDERS) dummy = filament_size[q];
     EEPROM_WRITE_VAR(i, dummy);
   }
+  /*****************************************************************
+   * 
+   * extension for RC
+   * 
+   ****************************************************************/
+   
+  #if ENABLED(CONFIGURATION_STORE_EXTENSION)
+     char ver_ext[4]= "000" ;
+     char ver_ext_ok[4]= EEPROM_VERSION_extension ;
+     int iext = i;
+     
+    EEPROM_WRITE_VAR(i,ver_ext);
+    
+    EEPROM_WRITE_VAR(i,max_pos[Z_AXIS]);
+    EEPROM_WRITE_VAR(i,delta_diagonal_rod_trim_tower_1);
+    EEPROM_WRITE_VAR(i,delta_diagonal_rod_trim_tower_2);
+    EEPROM_WRITE_VAR(i,delta_diagonal_rod_trim_tower_3);
+    EEPROM_WRITE_VAR(i,tower_adj);
 
+    EEPROM_WRITE_VAR(iext,ver_ext_ok);
+    
+    SERIAL_ECHO_START;
+    SERIAL_ECHOPAIR("Extended Settings Stored V at ", (unsigned long)iext);
+    SERIAL_ECHOLN("");
+    
+  #endif
+
+  
   char ver2[4] = EEPROM_VERSION;
   int j = EEPROM_OFFSET;
   EEPROM_WRITE_VAR(j, ver2); // validate data
@@ -459,6 +501,35 @@ void Config_RetrieveSettings() {
     // Call updatePID (similar to when we have processed M301)
     updatePID();
 
+    /**************************************************************************************
+     * 
+     * RC data extension
+     * 
+     *************************************************************************************/
+   #if ENABLED(CONFIGURATION_STORE_EXTENSION)
+    char stored_ver_ext[4];
+     char ver_ext[4] = EEPROM_VERSION_extension;
+      EEPROM_READ_VAR(i, stored_ver_ext); //read stored version
+      //  SERIAL_ECHOLN("Version: [" << ver << "] Stored version: [" << stored_ver << "]");
+
+      if (strncmp(ver_ext, stored_ver_ext, 3) == 0) {
+        // we have extended datas here
+        SERIAL_ECHO_START;
+        SERIAL_ECHO(ver_ext);
+        SERIAL_ECHOLNPGM(" Read extended datas");
+        EEPROM_READ_VAR(i,max_pos[Z_AXIS]);
+        EEPROM_READ_VAR(i,delta_diagonal_rod_trim_tower_1);
+        EEPROM_READ_VAR(i,delta_diagonal_rod_trim_tower_2);
+        EEPROM_READ_VAR(i,delta_diagonal_rod_trim_tower_3);
+        EEPROM_READ_VAR(i,tower_adj);
+
+        #if ENABLED(AUTO_CALIBRATION_FEATURE)
+          set_delta_constants();
+        #endif
+      }
+    #endif
+
+     
     // Report settings retrieved and length
     SERIAL_ECHO_START;
     SERIAL_ECHO(ver);
@@ -518,8 +589,10 @@ void Config_ResetDefault() {
     delta_radius =  DELTA_RADIUS;
     delta_diagonal_rod =  DELTA_DIAGONAL_ROD;
     delta_segments_per_second =  DELTA_SEGMENTS_PER_SECOND;
-    recalc_delta_settings(delta_radius, delta_diagonal_rod);
-  #elif ENABLED(Z_DUAL_ENDSTOPS)
+    #if (DISABLED(AUTO_CALIBRATION_FEATURE) || DISABLED (CONFIGURATION_STORE_EXTENSION))
+      recalc_delta_settings(delta_radius, delta_diagonal_rod);
+    #endif
+   #elif ENABLED(Z_DUAL_ENDSTOPS)
     z_endstop_adj = 0;
   #endif
 
@@ -582,6 +655,23 @@ void Config_ResetDefault() {
   for (uint8_t q = 0; q < COUNT(filament_size); q++)
     filament_size[q] = DEFAULT_NOMINAL_FILAMENT_DIA;
   calculate_volumetric_multipliers();
+
+   #if ENABLED(CONFIGURATION_STORE_EXTENSION)
+       max_pos[Z_AXIS] = MANUAL_Z_HOME_POS; 
+       delta_diagonal_rod_trim_tower_1=DELTA_DIAGONAL_ROD_TRIM_TOWER_1;
+       delta_diagonal_rod_trim_tower_2=DELTA_DIAGONAL_ROD_TRIM_TOWER_2;
+       delta_diagonal_rod_trim_tower_3=DELTA_DIAGONAL_ROD_TRIM_TOWER_3;
+       tower_adj[0]=DELTA_ANGLE_TRIM_TOWER_1;
+       tower_adj[1]=DELTA_ANGLE_TRIM_TOWER_2;
+       tower_adj[2]=DELTA_ANGLE_TRIM_TOWER_3;
+       tower_adj[3]= DELTA_RADIUS_TRIM_TOWER_1;
+       tower_adj[4]=DELTA_RADIUS_TRIM_TOWER_2;
+       tower_adj[5]=DELTA_RADIUS_TRIM_TOWER_3;
+       #if ENABLED(AUTO_CALIBRATION_FEATURE)
+         set_delta_constants();
+       #endif
+    #endif
+
 
   SERIAL_ECHO_START;
   SERIAL_ECHOLNPGM("Hardcoded Default Settings Loaded");

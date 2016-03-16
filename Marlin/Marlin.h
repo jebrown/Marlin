@@ -347,6 +347,10 @@ extern uint8_t active_extruder;
   extern void digipot_i2c_init();
 #endif
 
+#if ENABLED(AUTO_CALIBRATION_FEATURE)
+  boolean set_delta_constants();  // compute delta parameters after constants modification
+#endif
+
 extern void calculate_volumetric_multipliers();
 
 #endif //MARLIN_H
