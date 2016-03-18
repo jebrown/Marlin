@@ -5,7 +5,7 @@
 ## Specific version (slightly) modified for easy use on G2 G2S printer
 __No guarantee whatsoever – use with caution!__
  
- Compiled and tested on a G2S PRO. Last version of 14  march 2016.
+ Compiled and tested on a G2S PRO. Last version of 18  march 2016.
 
  Main modification :
 
@@ -42,6 +42,10 @@ __No guarantee whatsoever – use with caution!__
   + Q : divider for the speed of final z_probe approach (from 2 quick, to 50 very slow)
 
 - add the Q parameter to G29 (same function than for G30)
+
+- add I2C and TMP007 support
+  + add M125 command to print IR temp
+  + add LCD menu to get IR temp
 
  Further description may be found on the [forum](http://3dprinters.proboards.com/board/3/geeetech-g2-g2s-pro).
 
