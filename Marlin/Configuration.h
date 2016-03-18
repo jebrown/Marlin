@@ -1072,7 +1072,7 @@ const bool Z_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the logic
  * 
  **********************************************************************/
 
-#define I2CTEMP_SENSOR
+//#define I2CTEMP_SENSOR
 #if ENABLED(I2CTEMP_SENSOR)
 //#define I2CTEMP_SENSOR_ADDRESS 0x40
 #define I2CTEMP_SENSOR_MENU_MSG "Get temperature"
