@@ -5,28 +5,29 @@
 ## Specific version (slightly) modified for easy use on G2 G2S printer
 __No guarantee whatsoever – use with caution!__
  
- Compiled and tested on a G2S PRO. Last version of 14 march 2016.
+ Compiled and tested on a G2S PRO. Last version of 17 march 2016.
 
 This specific branch contains all the modifications made on the RC3 version of Marlin plus a port of the RichCattel version of Marlin with very  nice functionalities for auto calibration of Delta printers :
 https://groups.google.com/forum/#!topic/deltabot/SrmxHMxdgBE[1-25]
 
 As the G30 code was already taken in marlin (by a one shot z-probe test), I have given to the auto calibration the code G40.
 
-"G40" works nicely with a test of height with Zprobe in 7 points
+- "G40" works nicely with a test of height with Zprobe in 7 points
 
-"G40 A"  which should make the entire calibration 
+- "G40 A"  which should make the entire calibration 
 
-Two new parameters have been added to G40 :
+- Two new parameters have been added to G40 :
   + I : maximum number of iteration (by default 100)
   + P : target precision (by default 0.03 mm)
   + Q : divider for the speed of final z_probe approach (from 2 quick, to 50 very slow)
 
+- Parameters ...PROBE_OFFSET_FROM EXTRUDER taken into account (bug in first versions)
+
+- All parameters of Auto calibration now stored and retieved in EEPROM  (This means M665 amd M666 A B C D E F H I J K )
  
 This firmware supports M665 A B C (but it is not to modify tower angles as original RichCattel version but diagonal rod length).
 To support all parameters of auto calibration I have added to M665 D E F parameters to adjust tower angle and I J K to adjust tower radius.
-
-NONE OF THESE PARAMETERS ARE SAVED IN EEPROM, THEY SHOUD BE REENTERED AT EACH BOOT OR PUTIN THE SOURCE CODE :  
-in configuration.h :  
+M666 H change maximal Z height.
   
   // Diagonal rod length adjustment  
   // parameters maybe change by gcode M665 A B C  
