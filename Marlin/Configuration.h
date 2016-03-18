@@ -1063,4 +1063,19 @@ const bool Z_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the logic
 #include "Configuration_adv.h"
 #include "thermistortables.h"
 
+
+/**********************************************************************\
+ * Support for a I2C temp sensor
+ * add m125 code
+ * 
+ *
+ * 
+ **********************************************************************/
+
+#define I2CTEMP_SENSOR
+#if ENABLED(I2CTEMP_SENSOR)
+//#define I2CTEMP_SENSOR_ADDRESS 0x40
+#define I2CTEMP_SENSOR_MENU_MSG "Get temperature"
+
+#endif
 #endif //CONFIGURATION_H

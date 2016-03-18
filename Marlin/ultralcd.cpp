@@ -451,6 +451,10 @@ static void lcd_main_menu() {
     MENU_ITEM(submenu, MSG_LED_LIGHTING, lcd_led_lighting );
   #endif
 
+  #if ENABLED(I2CTEMP_SENSOR)
+    MENU_ITEM(gcode, I2CTEMP_SENSOR_MENU_MSG, PSTR("M125 L")); 
+  #endif
+
   END_MENU();
 }
 
@@ -909,7 +913,7 @@ static void _lcd_move(const char* name, AxisEnum axis, int min, int max) {
 }
 static void lcd_move_x() { _lcd_move(PSTR(MSG_MOVE_X), X_AXIS, X_MIN_POS, X_MAX_POS); }
 static void lcd_move_y() { _lcd_move(PSTR(MSG_MOVE_Y), Y_AXIS, Y_MIN_POS, Y_MAX_POS); }
-static void lcd_move_z() { _lcd_move(PSTR(MSG_MOVE_Z), Z_AXIS, Z_MIN_POS, Z_MAX_POS); }
+static void lcd_move_z() { _lcd_move(PSTR(MSG_MOVE_Z), Z_AXIS, Z_MIN_POS, max_pos[Z_AXIS] );} /// Z_MAX_POS); }
 static void lcd_move_e(
   #if EXTRUDERS > 1
     uint8_t e
@@ -1048,7 +1052,7 @@ static void lcd_move_menu() {
  #define LED_POWER_ON_MSG    "LED POWER ON"
  #define LED_POWER_HALF_MSG  "LED POWER HALF"
  #define LED_POWER_OFF_MSG   "LED POWER OFF"
-  
+ 
   static void lcd_led_lighting() {
 
     START_MENU();
@@ -1896,6 +1900,13 @@ void lcd_setalertstatuspgm(const char* message) {
   #endif
 }
 
+void lcd_setalertstatus(const char* message) {
+  lcd_setstatus(message, 1);
+  #if ENABLED(ULTIPANEL)
+    lcd_return_to_status();
+  #endif
+}
+
 void lcd_reset_alert_level() { lcd_status_message_level = 0; }
 
 #if ENABLED(HAS_LCD_CONTRAST)
@@ -2271,7 +2282,7 @@ char* ftostr52(const float& x) {
       refresh_cmd_timeout();
       current_position[Z_AXIS] += float((int)encoderPosition) * MBL_Z_STEP;
       if (min_software_endstops && current_position[Z_AXIS] < Z_MIN_POS) current_position[Z_AXIS] = Z_MIN_POS;
-      if (max_software_endstops && current_position[Z_AXIS] > Z_MAX_POS) current_position[Z_AXIS] = Z_MAX_POS;
+      if (max_software_endstops && current_position[Z_AXIS] > max_pos[Z_AXIS] current_position[Z_AXIS] =  max_pos[Z_AXIS];//Z_MAX_POS) current_position[Z_AXIS] = Z_MAX_POS;
       encoderPosition = 0;
       line_to_current(Z_AXIS);
       lcdDrawUpdate = 2;

@@ -65,6 +65,12 @@
   #include <L6470.h>
 #endif
 
+#if ENABLED(I2CTEMP_SENSOR)
+  #include <Wire.h>
+  #include <Adafruit_TMP007.h>
+#endif
+
 #if ENABLED(LEDSTRIP)
   #include <FastLED.h>
 #endif
+ 

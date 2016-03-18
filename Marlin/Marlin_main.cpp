@@ -64,6 +64,10 @@
   #include "ledstrip.h"
 #endif
  
+#if ENABLED(I2CTEMP_SENSOR)
+  #include "i2c_extension.h"
+#endif
+
 #if HAS_SERVOS
   #include "servo.h"
 #endif
@@ -152,6 +156,7 @@
  * M119 - Output Endstop status to serial port
  * M120 - Enable endstop detection
  * M121 - Disable endstop detection
+ * M125 - Read current I2C temp
  * M126 - Solenoid Air Valve Open (BariCUDA support by jmil)
  * M127 - Solenoid Air Valve Closed (BariCUDA vent to atmospheric pressure by jmil)
  * M128 - EtoP Open (BariCUDA EtoP = electricity to air pressure transducer by jmil)
@@ -4021,6 +4026,33 @@ inline void gcode_M105() {
   SERIAL_EOL;
 }
 
+#if ENABLED(I2CTEMP_SENSOR)
+
+/**
+ * M125: Read  I2C temperature
+ */
+inline void gcode_M125() {
+  //SERIAL_PROTOCOLPGM(MSG_OK);
+  float result = i2cReadTemp();
+
+  if (result !=NAN){
+    SERIAL_PROTOCOLPGM(" TO:");
+    SERIAL_PROTOCOL_F(result, 1);
+  } else {
+     SERIAL_EOL;
+     SERIAL_ERROR_START;
+     MYSERIAL.println(i2cTempStatus());
+  }
+  SERIAL_EOL;
+  if (code_seen('L') && (result !=NAN)) {
+    char lcdtmp [20];
+      sprintf_P(lcdtmp, PSTR("IR temp %s"),ftostr32(result) );
+      lcd_setalertstatus(lcdtmp);
+  }
+ 
+}
+#endif
+
 #if HAS_FAN
 
   /**
@@ -6097,6 +6129,13 @@ void process_next_command() {
         gcode_M105();
         return; // "ok" already printed
 
+      #if ENABLED(I2CTEMP_SENSOR)
+        case 125: // M105: Read I2C temp sensor
+        gcode_M125();
+        break; 
+      #endif
+
+      
       case 109: // M109: Wait for temperature
         gcode_M109();
         break;
