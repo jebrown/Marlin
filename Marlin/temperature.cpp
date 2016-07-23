@@ -37,7 +37,9 @@
 #endif
 
 #if ENABLED(PIDTEMPBED) || ENABLED(PIDTEMP)
-  #define PID_dT ((OVERSAMPLENR * 12.0)/(F_CPU / 64.0 / 256.0))
+  #ifndef PID_dT
+    #define PID_dT ((OVERSAMPLENR * 12.0)/(F_CPU / 64.0 / 256.0))
+  #endif
 #endif
 
 //===========================================================================
