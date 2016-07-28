@@ -2576,19 +2576,23 @@ inline void gcode_G28() {
   // For manual leveling move back to 0,0
   #if ENABLED(MESH_BED_LEVELING)
     if (mbl_was_active) {
-      current_position[X_AXIS] = mbl.get_x(0);
-      current_position[Y_AXIS] = mbl.get_y(0);
-      set_destination_to_current();
-      feedrate = homing_feedrate[X_AXIS];
-      line_to_destination();
-      st_synchronize();
-      current_position[Z_AXIS] = MESH_HOME_SEARCH_Z;
-      sync_plan_position();
-      mbl.active = 1;
-      #if ENABLED(DEBUG_LEVELING_FEATURE)
-        if (marlin_debug_flags & DEBUG_LEVELING) {
-          print_xyz("mbl_was_active > current_position", current_position);
-        }
+      #if ENABLED(DELTA)
+      //MESH_FIXME: Implement logic for z height.
+      #else
+        current_position[X_AXIS] = mbl.get_x(0);
+        current_position[Y_AXIS] = mbl.get_y(0);
+        set_destination_to_current();
+        feedrate = homing_feedrate[X_AXIS];
+        line_to_destination();
+        st_synchronize();
+        current_position[Z_AXIS] = MESH_HOME_SEARCH_Z;
+        sync_plan_position();
+        mbl.active = 1;
+        #if ENABLED(DEBUG_LEVELING_FEATURE)
+          if (marlin_debug_flags & DEBUG_LEVELING) {
+            print_xyz("mbl_was_active > current_position", current_position);
+          }
+        #endif
       #endif
     }
   #endif
@@ -2640,108 +2644,112 @@ inline void gcode_G28() {
 
     int ix, iy;
     float z;
-
-    switch (state) {
-      case MeshReport:
-        if (mbl.active) {
-          SERIAL_PROTOCOLPGM("Num X,Y: ");
-          SERIAL_PROTOCOL(MESH_NUM_X_POINTS);
-          SERIAL_PROTOCOLCHAR(',');
-          SERIAL_PROTOCOL(MESH_NUM_Y_POINTS);
-          SERIAL_PROTOCOLPGM("\nZ search height: ");
-          SERIAL_PROTOCOL(MESH_HOME_SEARCH_Z);
-          SERIAL_PROTOCOLLNPGM("\nMeasured points:");
-          for (int y = 0; y < MESH_NUM_Y_POINTS; y++) {
-            for (int x = 0; x < MESH_NUM_X_POINTS; x++) {
-              SERIAL_PROTOCOLPGM("  ");
-              SERIAL_PROTOCOL_F(mbl.z_values[y][x], 5);
+    #if ENABLED(DELTA)
+      //MESH_FIXME: Implement Gcode for delta
+      //MESH_TODO:
+    #else
+      switch (state) {
+        case MeshReport:
+          if (mbl.active) {
+            SERIAL_PROTOCOLPGM("Num X,Y: ");
+            SERIAL_PROTOCOL(MESH_NUM_X_POINTS);
+            SERIAL_PROTOCOLCHAR(',');
+            SERIAL_PROTOCOL(MESH_NUM_Y_POINTS);
+            SERIAL_PROTOCOLPGM("\nZ search height: ");
+            SERIAL_PROTOCOL(MESH_HOME_SEARCH_Z);
+            SERIAL_PROTOCOLLNPGM("\nMeasured points:");
+            for (int y = 0; y < MESH_NUM_Y_POINTS; y++) {
+              for (int x = 0; x < MESH_NUM_X_POINTS; x++) {
+                SERIAL_PROTOCOLPGM("  ");
+                SERIAL_PROTOCOL_F(mbl.z_values[y][x], 5);
+              }
+              SERIAL_EOL;
             }
-            SERIAL_EOL;
           }
-        }
-        else
-          SERIAL_PROTOCOLLNPGM("Mesh bed leveling not active.");
-        break;
+          else
+            SERIAL_PROTOCOLLNPGM("Mesh bed leveling not active.");
+          break;
 
-      case MeshStart:
-        mbl.reset();
-        probe_point = 0;
-        enqueuecommands_P(PSTR("G28\nG29 S2"));
-        break;
+        case MeshStart:
+          mbl.reset();
+          probe_point = 0;
+          enqueuecommands_P(PSTR("G28\nG29 S2"));
+          break;
 
-      case MeshNext:
-        if (probe_point < 0) {
-          SERIAL_PROTOCOLLNPGM("Start mesh probing with \"G29 S1\" first.");
-          return;
-        }
-        if (probe_point == 0) {
-          // Set Z to a positive value before recording the first Z.
-          current_position[Z_AXIS] = MESH_HOME_SEARCH_Z;
-          sync_plan_position();
-        }
-        else {
-          // For others, save the Z of the previous point, then raise Z again.
-          ix = (probe_point - 1) % MESH_NUM_X_POINTS;
-          iy = (probe_point - 1) / MESH_NUM_X_POINTS;
-          if (iy & 1) ix = (MESH_NUM_X_POINTS - 1) - ix; // zig-zag
-          mbl.set_z(ix, iy, current_position[Z_AXIS]);
-          current_position[Z_AXIS] = MESH_HOME_SEARCH_Z;
-          plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], homing_feedrate[X_AXIS] / 60, active_extruder);
-          st_synchronize();
-        }
-        // Is there another point to sample? Move there.
-        if (probe_point < MESH_NUM_X_POINTS * MESH_NUM_Y_POINTS) {
-          ix = probe_point % MESH_NUM_X_POINTS;
-          iy = probe_point / MESH_NUM_X_POINTS;
-          if (iy & 1) ix = (MESH_NUM_X_POINTS - 1) - ix; // zig-zag
-          current_position[X_AXIS] = mbl.get_x(ix);
-          current_position[Y_AXIS] = mbl.get_y(iy);
-          plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], homing_feedrate[X_AXIS] / 60, active_extruder);
-          st_synchronize();
-          probe_point++;
-        }
-        else {
-          // After recording the last point, activate the mbl and home
-          SERIAL_PROTOCOLLNPGM("Mesh probing done.");
-          probe_point = -1;
-          mbl.active = 1;
-          enqueuecommands_P(PSTR("G28"));
-        }
-        break;
-
-      case MeshSet:
-        if (code_seen('X')) {
-          ix = code_value_long() - 1;
-          if (ix < 0 || ix >= MESH_NUM_X_POINTS) {
-            SERIAL_PROTOCOLPGM("X out of range (1-" STRINGIFY(MESH_NUM_X_POINTS) ").\n");
+        case MeshNext:
+          if (probe_point < 0) {
+            SERIAL_PROTOCOLLNPGM("Start mesh probing with \"G29 S1\" first.");
             return;
           }
-        }
-        else {
-          SERIAL_PROTOCOLPGM("X not entered.\n");
-          return;
-        }
-        if (code_seen('Y')) {
-          iy = code_value_long() - 1;
-          if (iy < 0 || iy >= MESH_NUM_Y_POINTS) {
-            SERIAL_PROTOCOLPGM("Y out of range (1-" STRINGIFY(MESH_NUM_Y_POINTS) ").\n");
+          if (probe_point == 0) {
+            // Set Z to a positive value before recording the first Z.
+            current_position[Z_AXIS] = MESH_HOME_SEARCH_Z;
+            sync_plan_position();
+          }
+          else {
+            // For others, save the Z of the previous point, then raise Z again.
+            ix = (probe_point - 1) % MESH_NUM_X_POINTS;
+            iy = (probe_point - 1) / MESH_NUM_X_POINTS;
+            if (iy & 1) ix = (MESH_NUM_X_POINTS - 1) - ix; // zig-zag
+            mbl.set_z(ix, iy, current_position[Z_AXIS]);
+            current_position[Z_AXIS] = MESH_HOME_SEARCH_Z;
+            plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], homing_feedrate[X_AXIS] / 60, active_extruder);
+            st_synchronize();
+          }
+          // Is there another point to sample? Move there.
+          if (probe_point < MESH_NUM_X_POINTS * MESH_NUM_Y_POINTS) {
+            ix = probe_point % MESH_NUM_X_POINTS;
+            iy = probe_point / MESH_NUM_X_POINTS;
+            if (iy & 1) ix = (MESH_NUM_X_POINTS - 1) - ix; // zig-zag
+            current_position[X_AXIS] = mbl.get_x(ix);
+            current_position[Y_AXIS] = mbl.get_y(iy);
+            plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], homing_feedrate[X_AXIS] / 60, active_extruder);
+            st_synchronize();
+            probe_point++;
+          }
+          else {
+            // After recording the last point, activate the mbl and home
+            SERIAL_PROTOCOLLNPGM("Mesh probing done.");
+            probe_point = -1;
+            mbl.active = 1;
+            enqueuecommands_P(PSTR("G28"));
+          }
+          break;
+
+        case MeshSet:
+          if (code_seen('X')) {
+            ix = code_value_long() - 1;
+            if (ix < 0 || ix >= MESH_NUM_X_POINTS) {
+              SERIAL_PROTOCOLPGM("X out of range (1-" STRINGIFY(MESH_NUM_X_POINTS) ").\n");
+              return;
+            }
+          }
+          else {
+            SERIAL_PROTOCOLPGM("X not entered.\n");
             return;
           }
-        }
-        else {
-          SERIAL_PROTOCOLPGM("Y not entered.\n");
-          return;
-        }
-        if (code_seen('Z')) {
-          z = code_value();
-        }
-        else {
-          SERIAL_PROTOCOLPGM("Z not entered.\n");
-          return;
-        }
-        mbl.z_values[iy][ix] = z;
+          if (code_seen('Y')) {
+            iy = code_value_long() - 1;
+            if (iy < 0 || iy >= MESH_NUM_Y_POINTS) {
+              SERIAL_PROTOCOLPGM("Y out of range (1-" STRINGIFY(MESH_NUM_Y_POINTS) ").\n");
+              return;
+            }
+          }
+          else {
+            SERIAL_PROTOCOLPGM("Y not entered.\n");
+            return;
+          }
+          if (code_seen('Z')) {
+            z = code_value();
+          }
+          else {
+            SERIAL_PROTOCOLPGM("Z not entered.\n");
+            return;
+          }
+          mbl.z_values[iy][ix] = z;
 
-    } // switch(state)
+      } // switch(state)
+    #endif
   }
 
 #elif ENABLED(AUTO_BED_LEVELING_FEATURE)
@@ -5401,25 +5409,48 @@ inline void gcode_M410() { quickStop(); }
    * M421: Set a single Mesh Bed Leveling Z coordinate
    */
   inline void gcode_M421() {
-    float x, y, z;
-    bool err = false, hasX, hasY, hasZ;
-    if ((hasX = code_seen('X'))) x = code_value();
-    if ((hasY = code_seen('Y'))) y = code_value();
-    if ((hasZ = code_seen('Z'))) z = code_value();
+    #if ENABLED(DELTA)
+      float x, y, z;
+      bool err = false, hasX, hasY, hasZ;
+      if ((hasX = code_seen('X'))) x = code_value();
+      if ((hasY = code_seen('Y'))) y = code_value();
+      if ((hasZ = code_seen('Z'))) z = code_value();
+  
+      if (!hasX || !hasY || !hasZ) {
+        SERIAL_ERROR_START;
+        SERIAL_ERRORLNPGM(MSG_ERR_M421_REQUIRES_XYZ);
+        err = true;
+      }
+  
+      //if (x >= MESH_NUM_X_POINTS || y >= MESH_NUM_Y_POINTS) {
+      //  SERIAL_ERROR_START;
+      //  SERIAL_ERRORLNPGM(MSG_ERR_MESH_INDEX_OOB);
+      //  err = true;
+      //}
+      //MESH_FIXME: Actually implement M421
+      //if (!err) mbl.set_z(mbl.select_r_index(x), mbl.select_y_index(y), z);
+    #else
+      float x, y, z;
+      bool err = false, hasX, hasY, hasZ;
+      if ((hasX = code_seen('X'))) x = code_value();
+      if ((hasY = code_seen('Y'))) y = code_value();
+      if ((hasZ = code_seen('Z'))) z = code_value();
+  
+      if (!hasX || !hasY || !hasZ) {
+        SERIAL_ERROR_START;
+        SERIAL_ERRORLNPGM(MSG_ERR_M421_REQUIRES_XYZ);
+        err = true;
+      }
+  
+      if (x >= MESH_NUM_X_POINTS || y >= MESH_NUM_Y_POINTS) {
+        SERIAL_ERROR_START;
+        SERIAL_ERRORLNPGM(MSG_ERR_MESH_INDEX_OOB);
+        err = true;
+      }
+    
 
-    if (!hasX || !hasY || !hasZ) {
-      SERIAL_ERROR_START;
-      SERIAL_ERRORLNPGM(MSG_ERR_M421_REQUIRES_XYZ);
-      err = true;
-    }
-
-    if (x >= MESH_NUM_X_POINTS || y >= MESH_NUM_Y_POINTS) {
-      SERIAL_ERROR_START;
-      SERIAL_ERRORLNPGM(MSG_ERR_MESH_INDEX_OOB);
-      err = true;
-    }
-
-    if (!err) mbl.set_z(mbl.select_x_index(x), mbl.select_y_index(y), z);
+      if (!err) mbl.set_z(mbl.select_x_index(x), mbl.select_y_index(y), z);
+    #endif
   }
 
 #endif
@@ -6640,64 +6671,68 @@ void mesh_plan_buffer_line(float x, float y, float z, const float e, float feed_
     set_current_to_destination();
     return;
   }
-  int pix = mbl.select_x_index(current_position[X_AXIS]);
-  int piy = mbl.select_y_index(current_position[Y_AXIS]);
-  int ix = mbl.select_x_index(x);
-  int iy = mbl.select_y_index(y);
-  pix = min(pix, MESH_NUM_X_POINTS - 2);
-  piy = min(piy, MESH_NUM_Y_POINTS - 2);
-  ix = min(ix, MESH_NUM_X_POINTS - 2);
-  iy = min(iy, MESH_NUM_Y_POINTS - 2);
-  if (pix == ix && piy == iy) {
-    // Start and end on same mesh square
-    plan_buffer_line(x, y, z, e, feed_rate, extruder);
-    set_current_to_destination();
-    return;
-  }
-  float nx, ny, ne, normalized_dist;
-  if (ix > pix && (x_splits) & BIT(ix)) {
-    nx = mbl.get_x(ix);
-    normalized_dist = (nx - current_position[X_AXIS]) / (x - current_position[X_AXIS]);
-    ny = current_position[Y_AXIS] + (y - current_position[Y_AXIS]) * normalized_dist;
-    ne = current_position[E_AXIS] + (e - current_position[E_AXIS]) * normalized_dist;
-    x_splits ^= BIT(ix);
-  }
-  else if (ix < pix && (x_splits) & BIT(pix)) {
-    nx = mbl.get_x(pix);
-    normalized_dist = (nx - current_position[X_AXIS]) / (x - current_position[X_AXIS]);
-    ny = current_position[Y_AXIS] + (y - current_position[Y_AXIS]) * normalized_dist;
-    ne = current_position[E_AXIS] + (e - current_position[E_AXIS]) * normalized_dist;
-    x_splits ^= BIT(pix);
-  }
-  else if (iy > piy && (y_splits) & BIT(iy)) {
-    ny = mbl.get_y(iy);
-    normalized_dist = (ny - current_position[Y_AXIS]) / (y - current_position[Y_AXIS]);
-    nx = current_position[X_AXIS] + (x - current_position[X_AXIS]) * normalized_dist;
-    ne = current_position[E_AXIS] + (e - current_position[E_AXIS]) * normalized_dist;
-    y_splits ^= BIT(iy);
-  }
-  else if (iy < piy && (y_splits) & BIT(piy)) {
-    ny = mbl.get_y(piy);
-    normalized_dist = (ny - current_position[Y_AXIS]) / (y - current_position[Y_AXIS]);
-    nx = current_position[X_AXIS] + (x - current_position[X_AXIS]) * normalized_dist;
-    ne = current_position[E_AXIS] + (e - current_position[E_AXIS]) * normalized_dist;
-    y_splits ^= BIT(piy);
-  }
-  else {
-    // Already split on a border
-    plan_buffer_line(x, y, z, e, feed_rate, extruder);
-    set_current_to_destination();
-    return;
-  }
-  // Do the split and look for more borders
-  destination[X_AXIS] = nx;
-  destination[Y_AXIS] = ny;
-  destination[E_AXIS] = ne;
-  mesh_plan_buffer_line(nx, ny, z, ne, feed_rate, extruder, x_splits, y_splits);
-  destination[X_AXIS] = x;
-  destination[Y_AXIS] = y;
-  destination[E_AXIS] = e;
-  mesh_plan_buffer_line(x, y, z, e, feed_rate, extruder, x_splits, y_splits);
+  #if ENABLED(DELTA)
+    //MESH_TODO: MESH_FIXME: Implement line cutting feature.
+  #else
+    int pix = mbl.select_x_index(current_position[X_AXIS]);
+    int piy = mbl.select_y_index(current_position[Y_AXIS]);
+    int ix = mbl.select_x_index(x);
+    int iy = mbl.select_y_index(y);
+    pix = min(pix, MESH_NUM_X_POINTS - 2);
+    piy = min(piy, MESH_NUM_Y_POINTS - 2);
+    ix = min(ix, MESH_NUM_X_POINTS - 2);
+    iy = min(iy, MESH_NUM_Y_POINTS - 2);
+    if (pix == ix && piy == iy) {
+      // Start and end on same mesh square
+      plan_buffer_line(x, y, z, e, feed_rate, extruder);
+      set_current_to_destination();
+      return;
+    }
+    float nx, ny, ne, normalized_dist;
+    if (ix > pix && (x_splits) & BIT(ix)) {
+      nx = mbl.get_x(ix);
+      normalized_dist = (nx - current_position[X_AXIS]) / (x - current_position[X_AXIS]);
+      ny = current_position[Y_AXIS] + (y - current_position[Y_AXIS]) * normalized_dist;
+      ne = current_position[E_AXIS] + (e - current_position[E_AXIS]) * normalized_dist;
+      x_splits ^= BIT(ix);
+    }
+    else if (ix < pix && (x_splits) & BIT(pix)) {
+      nx = mbl.get_x(pix);
+      normalized_dist = (nx - current_position[X_AXIS]) / (x - current_position[X_AXIS]);
+      ny = current_position[Y_AXIS] + (y - current_position[Y_AXIS]) * normalized_dist;
+      ne = current_position[E_AXIS] + (e - current_position[E_AXIS]) * normalized_dist;
+      x_splits ^= BIT(pix);
+    }
+    else if (iy > piy && (y_splits) & BIT(iy)) {
+      ny = mbl.get_y(iy);
+      normalized_dist = (ny - current_position[Y_AXIS]) / (y - current_position[Y_AXIS]);
+      nx = current_position[X_AXIS] + (x - current_position[X_AXIS]) * normalized_dist;
+      ne = current_position[E_AXIS] + (e - current_position[E_AXIS]) * normalized_dist;
+      y_splits ^= BIT(iy);
+    }
+    else if (iy < piy && (y_splits) & BIT(piy)) {
+      ny = mbl.get_y(piy);
+      normalized_dist = (ny - current_position[Y_AXIS]) / (y - current_position[Y_AXIS]);
+      nx = current_position[X_AXIS] + (x - current_position[X_AXIS]) * normalized_dist;
+      ne = current_position[E_AXIS] + (e - current_position[E_AXIS]) * normalized_dist;
+      y_splits ^= BIT(piy);
+    }
+    else {
+      // Already split on a border
+      plan_buffer_line(x, y, z, e, feed_rate, extruder);
+      set_current_to_destination();
+      return;
+    }
+    // Do the split and look for more borders
+    destination[X_AXIS] = nx;
+    destination[Y_AXIS] = ny;
+    destination[E_AXIS] = ne;
+    mesh_plan_buffer_line(nx, ny, z, ne, feed_rate, extruder, x_splits, y_splits);
+    destination[X_AXIS] = x;
+    destination[Y_AXIS] = y;
+    destination[E_AXIS] = e;
+    mesh_plan_buffer_line(x, y, z, e, feed_rate, extruder, x_splits, y_splits);
+  #endif
 }
 #endif  // MESH_BED_LEVELING
 

@@ -2282,7 +2282,7 @@ char* ftostr52(const float& x) {
       refresh_cmd_timeout();
       current_position[Z_AXIS] += float((int)encoderPosition) * MBL_Z_STEP;
       if (min_software_endstops && current_position[Z_AXIS] < Z_MIN_POS) current_position[Z_AXIS] = Z_MIN_POS;
-      if (max_software_endstops && current_position[Z_AXIS] > max_pos[Z_AXIS] current_position[Z_AXIS] =  max_pos[Z_AXIS];//Z_MAX_POS) current_position[Z_AXIS] = Z_MAX_POS;
+      if (max_software_endstops && current_position[Z_AXIS] > max_pos[Z_AXIS]) current_position[Z_AXIS] =  max_pos[Z_AXIS];//Z_MAX_POS) current_position[Z_AXIS] = Z_MAX_POS;
       encoderPosition = 0;
       line_to_current(Z_AXIS);
       lcdDrawUpdate = 2;
@@ -2292,29 +2292,33 @@ char* ftostr52(const float& x) {
     if (LCD_CLICKED) {
       if (!debounce_click) {
         debounce_click = true;
-        int ix = _lcd_level_bed_position % MESH_NUM_X_POINTS,
-            iy = _lcd_level_bed_position / MESH_NUM_X_POINTS;
-        if (iy & 1) ix = (MESH_NUM_X_POINTS - 1) - ix; // Zig zag
-        mbl.set_z(ix, iy, current_position[Z_AXIS]);
-        _lcd_level_bed_position++;
-        if (_lcd_level_bed_position == MESH_NUM_X_POINTS * MESH_NUM_Y_POINTS) {
-          current_position[Z_AXIS] = MESH_HOME_SEARCH_Z;
-          line_to_current(Z_AXIS);
-          mbl.active = 1;
-          enqueuecommands_P(PSTR("G28"));
-          lcd_return_to_status();
-        }
-        else {
-          current_position[Z_AXIS] = MESH_HOME_SEARCH_Z;
-          line_to_current(Z_AXIS);
-          ix = _lcd_level_bed_position % MESH_NUM_X_POINTS;
-          iy = _lcd_level_bed_position / MESH_NUM_X_POINTS;
+        #if ENABLED(DELTA)
+        //MESH_FIXME
+        #else
+          int ix = _lcd_level_bed_position % MESH_NUM_X_POINTS,
+              iy = _lcd_level_bed_position / MESH_NUM_X_POINTS;
           if (iy & 1) ix = (MESH_NUM_X_POINTS - 1) - ix; // Zig zag
-          current_position[X_AXIS] = mbl.get_x(ix);
-          current_position[Y_AXIS] = mbl.get_y(iy);
-          line_to_current(manual_feedrate[X_AXIS] <= manual_feedrate[Y_AXIS] ? X_AXIS : Y_AXIS);
-          lcdDrawUpdate = 2;
-        }
+          mbl.set_z(ix, iy, current_position[Z_AXIS]);
+          _lcd_level_bed_position++;
+          if (_lcd_level_bed_position == MESH_NUM_X_POINTS * MESH_NUM_Y_POINTS) {
+            current_position[Z_AXIS] = MESH_HOME_SEARCH_Z;
+            line_to_current(Z_AXIS);
+            mbl.active = 1;
+            enqueuecommands_P(PSTR("G28"));
+            lcd_return_to_status();
+          }
+          else {
+            current_position[Z_AXIS] = MESH_HOME_SEARCH_Z;
+            line_to_current(Z_AXIS);
+            ix = _lcd_level_bed_position % MESH_NUM_X_POINTS;
+            iy = _lcd_level_bed_position / MESH_NUM_X_POINTS;
+            if (iy & 1) ix = (MESH_NUM_X_POINTS - 1) - ix; // Zig zag
+            current_position[X_AXIS] = mbl.get_x(ix);
+            current_position[Y_AXIS] = mbl.get_y(iy);
+            line_to_current(manual_feedrate[X_AXIS] <= manual_feedrate[Y_AXIS] ? X_AXIS : Y_AXIS);
+            lcdDrawUpdate = 2;
+          }
+        #endif
       }
     }
     else {
@@ -2330,8 +2334,12 @@ char* ftostr52(const float& x) {
     if (axis_known_position[X_AXIS] && axis_known_position[Y_AXIS] && axis_known_position[Z_AXIS]) {
       current_position[Z_AXIS] = MESH_HOME_SEARCH_Z;
       plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
-      current_position[X_AXIS] = MESH_MIN_X;
-      current_position[Y_AXIS] = MESH_MIN_Y;
+      #if ENABLED(DELTA)
+      //MESH_FIXME
+      #else
+        current_position[X_AXIS] = MESH_MIN_X;
+        current_position[Y_AXIS] = MESH_MIN_Y;
+      #endif
       line_to_current(manual_feedrate[X_AXIS] <= manual_feedrate[Y_AXIS] ? X_AXIS : Y_AXIS);
       _lcd_level_bed_position = 0;
       lcd_goto_menu(_lcd_level_bed);

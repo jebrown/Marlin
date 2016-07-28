@@ -113,9 +113,9 @@
  * Mesh Bed Leveling
  */
 #if ENABLED(MESH_BED_LEVELING)
-  #if ENABLED(DELTA)
-    #error MESH_BED_LEVELING does not yet support DELTA printers.
-  #endif
+//  #if ENABLED(DELTA)
+//    #error MESH_BED_LEVELING does not yet support DELTA printers.
+//  #endif
   #if ENABLED(AUTO_BED_LEVELING_FEATURE)
     #error Select AUTO_BED_LEVELING_FEATURE or MESH_BED_LEVELING, not both.
   #endif

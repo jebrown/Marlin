@@ -155,14 +155,18 @@ void Config_StoreSettings()  {
   uint8_t mesh_num_x = 3;
   uint8_t mesh_num_y = 3;
   #if ENABLED(MESH_BED_LEVELING)
-    // Compile time test that sizeof(mbl.z_values) is as expected
-    typedef char c_assert[(sizeof(mbl.z_values) == MESH_NUM_X_POINTS * MESH_NUM_Y_POINTS * sizeof(dummy)) ? 1 : -1];
-    mesh_num_x = MESH_NUM_X_POINTS;
-    mesh_num_y = MESH_NUM_Y_POINTS;
-    EEPROM_WRITE_VAR(i, mbl.active);
-    EEPROM_WRITE_VAR(i, mesh_num_x);
-    EEPROM_WRITE_VAR(i, mesh_num_y);
-    EEPROM_WRITE_VAR(i, mbl.z_values);
+    #if ENABLED(DELTA)
+    //MESH_FIXME Add check for eeprom
+    #else
+      // Compile time test that sizeof(mbl.z_values) is as expected
+      typedef char c_assert[(sizeof(mbl.z_values) == MESH_NUM_X_POINTS * MESH_NUM_Y_POINTS * sizeof(dummy)) ? 1 : -1];
+      mesh_num_x = MESH_NUM_X_POINTS;
+      mesh_num_y = MESH_NUM_Y_POINTS;
+      EEPROM_WRITE_VAR(i, mbl.active);
+      EEPROM_WRITE_VAR(i, mesh_num_x);
+      EEPROM_WRITE_VAR(i, mesh_num_y);
+      EEPROM_WRITE_VAR(i, mbl.z_values);
+    #endif
   #else
     uint8_t dummy_uint8 = 0;
     EEPROM_WRITE_VAR(i, dummy_uint8);
@@ -335,12 +339,16 @@ void Config_RetrieveSettings() {
     EEPROM_READ_VAR(i, mesh_num_y);
     #if ENABLED(MESH_BED_LEVELING)
       mbl.active = dummy_uint8;
-      if (mesh_num_x == MESH_NUM_X_POINTS && mesh_num_y == MESH_NUM_Y_POINTS) {
-        EEPROM_READ_VAR(i, mbl.z_values);
-      } else {
-        mbl.reset();
-        for (int q = 0; q < mesh_num_x * mesh_num_y; q++) EEPROM_READ_VAR(i, dummy);
-      }
+      #if ENABLED(DELTA)
+      //MESH_FIXME: ????
+      #else
+        if (mesh_num_x == MESH_NUM_X_POINTS && mesh_num_y == MESH_NUM_Y_POINTS) {
+          EEPROM_READ_VAR(i, mbl.z_values);
+        } else {
+          mbl.reset();
+          for (int q = 0; q < mesh_num_x * mesh_num_y; q++) EEPROM_READ_VAR(i, dummy);
+        }
+      #endif
     #else
       for (int q = 0; q < mesh_num_x * mesh_num_y; q++) EEPROM_READ_VAR(i, dummy);
     #endif // MESH_BED_LEVELING
@@ -682,19 +690,37 @@ void Config_PrintSettings(bool forReplay) {
       SERIAL_ECHOLNPGM("Mesh bed leveling:");
       CONFIG_ECHO_START;
     }
-    SERIAL_ECHOPAIR("  M420 S", (unsigned long)mbl.active);
-    SERIAL_ECHOPAIR(" X", (unsigned long)MESH_NUM_X_POINTS);
-    SERIAL_ECHOPAIR(" Y", (unsigned long)MESH_NUM_Y_POINTS);
-    SERIAL_EOL;
-    for (int y = 0; y < MESH_NUM_Y_POINTS; y++) {
-      for (int x = 0; x < MESH_NUM_X_POINTS; x++) {
-        CONFIG_ECHO_START;
-        SERIAL_ECHOPAIR("  M421 X", mbl.get_x(x));
-        SERIAL_ECHOPAIR(" Y", mbl.get_y(y));
-        SERIAL_ECHOPAIR(" Z", mbl.z_values[y][x]);
-        SERIAL_EOL;
+    #if ENABLED(DELTA)
+      //MESH_FIXME: Implement storage
+      SERIAL_ECHOPAIR("  M420 S", (unsigned long)mbl.active);
+      //SERIAL_ECHOPAIR(" X", (unsigned long)MESH_NUM_X_POINTS);
+      //SERIAL_ECHOPAIR(" Y", (unsigned long)MESH_NUM_Y_POINTS);
+      //SERIAL_EOL;
+      // for (int y = 0; y < MESH_NUM_Y_POINTS; y++) {
+//         for (int x = 0; x < MESH_NUM_X_POINTS; x++) {
+//           CONFIG_ECHO_START;
+//           SERIAL_ECHOPAIR("  M421 X", mbl.get_x(x));
+//           SERIAL_ECHOPAIR(" Y", mbl.get_y(y));
+//           SERIAL_ECHOPAIR(" Z", mbl.z_values[y][x]);
+//           SERIAL_EOL;
+//         }
+//       }
+
+    #else
+      SERIAL_ECHOPAIR("  M420 S", (unsigned long)mbl.active);
+      SERIAL_ECHOPAIR(" X", (unsigned long)MESH_NUM_X_POINTS);
+      SERIAL_ECHOPAIR(" Y", (unsigned long)MESH_NUM_Y_POINTS);
+      SERIAL_EOL;
+      for (int y = 0; y < MESH_NUM_Y_POINTS; y++) {
+        for (int x = 0; x < MESH_NUM_X_POINTS; x++) {
+          CONFIG_ECHO_START;
+          SERIAL_ECHOPAIR("  M421 X", mbl.get_x(x));
+          SERIAL_ECHOPAIR(" Y", mbl.get_y(y));
+          SERIAL_ECHOPAIR(" Z", mbl.z_values[y][x]);
+          SERIAL_EOL;
+        }
       }
-    }
+    #endif
   #endif
 
   #if ENABLED(DELTA)

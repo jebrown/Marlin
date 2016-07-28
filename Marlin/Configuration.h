@@ -342,7 +342,8 @@ Here are some standard links for getting your machine calibrated:
   // NOTE NB all values for DELTA_* values MUST be floating point, so always have a decimal point in them
 
   // Center-to-center distance of the holes in the diagonal push rods.
-  #define DELTA_DIAGONAL_ROD 196.0 // mm 
+  //#define DELTA_DIAGONAL_ROD 196.0 // mm 
+  #define DELTA_DIAGONAL_ROD 197.0 // mm 
   
   // Horizontal offset from middle of printer to smooth rod center.
   #define DELTA_SMOOTH_ROD_OFFSET 160.0 // mm
@@ -354,10 +355,22 @@ Here are some standard links for getting your machine calibrated:
   #define DELTA_CARRIAGE_OFFSET 33.0 // mm
 
   // Horizontal distance bridged by diagonal push rods when effector is centered.
-   #define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-DELTA_EFFECTOR_OFFSET-DELTA_CARRIAGE_OFFSET+2)
+  //#define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-DELTA_EFFECTOR_OFFSET-DELTA_CARRIAGE_OFFSET+2) //0.3mm higher than towers
+  //#define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-DELTA_EFFECTOR_OFFSET-DELTA_CARRIAGE_OFFSET+3.62) // 0.4mm higher than towers
+  //#define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-DELTA_EFFECTOR_OFFSET-DELTA_CARRIAGE_OFFSET+0.0) // 0.4mm higher than towers
+  //#define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-DELTA_EFFECTOR_OFFSET-DELTA_CARRIAGE_OFFSET-2.5) // 0.4mm higher than towers
+  //#define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-DELTA_EFFECTOR_OFFSET-DELTA_CARRIAGE_OFFSET-5.5) // 0.3 mm higher than towers
+  //#define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-DELTA_EFFECTOR_OFFSET-DELTA_CARRIAGE_OFFSET+1.46) // mm higher than towers
+  //#define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-DELTA_EFFECTOR_OFFSET-DELTA_CARRIAGE_OFFSET+1.66) // 0.4 mm lower than towers at 200.6
+  //#define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-DELTA_EFFECTOR_OFFSET-DELTA_CARRIAGE_OFFSET+1.26) // 0.4 mm lower than towers at 200.6
+  //#define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-DELTA_EFFECTOR_OFFSET-DELTA_CARRIAGE_OFFSET+0.0) // 1 mm lower than towers at 200.6
+  //#define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-DELTA_EFFECTOR_OFFSET-DELTA_CARRIAGE_OFFSET+2.0) // 0.08 mm higherthan towers at 200.6
+  #define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-DELTA_EFFECTOR_OFFSET-DELTA_CARRIAGE_OFFSET+1.96) // 0.08 mm higherthan towers at 200.6
 
+  
   // Print surface diameter/2 minus unreachable space (avoid collisions with vertical towers).
-  #define DELTA_PRINTABLE_RADIUS 104
+  //#define DELTA_PRINTABLE_RADIUS 104
+  #define DELTA_PRINTABLE_RADIUS 94
 
   // Added from: http://www.thingiverse.com/thing:745523
   #define SIN_58 0.8480480961564259  
@@ -380,9 +393,12 @@ Here are some standard links for getting your machine calibrated:
 
   // Diagonal rod length adjustment 
   // parameters maybe change by gcode M665 A B C
-    #define DELTA_DIAGONAL_ROD_TRIM_TOWER_1 0.0
-    #define DELTA_DIAGONAL_ROD_TRIM_TOWER_2 0.0
-    #define DELTA_DIAGONAL_ROD_TRIM_TOWER_3 0.0
+    //#define DELTA_DIAGONAL_ROD_TRIM_TOWER_1 0.0
+    //#define DELTA_DIAGONAL_ROD_TRIM_TOWER_2 0.0
+    //#define DELTA_DIAGONAL_ROD_TRIM_TOWER_3 0.0
+    #define DELTA_DIAGONAL_ROD_TRIM_TOWER_1 DELTA_DIAGONAL_ROD*(60.49/60.0-1.0)
+    #define DELTA_DIAGONAL_ROD_TRIM_TOWER_2 DELTA_DIAGONAL_ROD*(60.7/60.0-1.0)
+    #define DELTA_DIAGONAL_ROD_TRIM_TOWER_3 DELTA_DIAGONAL_ROD*(60.4/60.0-1.0)
  
 
 #endif
@@ -495,21 +511,31 @@ const bool Z_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the logic
 //=========================== Manual Bed Leveling ===========================
 //===========================================================================
 
-//#define MANUAL_BED_LEVELING  // Add display menu option for bed leveling.
-//#define MESH_BED_LEVELING    // Enable mesh bed leveling.
+#define MANUAL_BED_LEVELING  // Add display menu option for bed leveling.
+#define MESH_BED_LEVELING    // Enable mesh bed leveling.
 
 #if ENABLED(MANUAL_BED_LEVELING)
   #define MBL_Z_STEP 0.025  // Step size while manually probing Z axis.
 #endif  // MANUAL_BED_LEVELING
 
 #if ENABLED(MESH_BED_LEVELING)
-  #define MESH_MIN_X 10
-  #define MESH_MAX_X (X_MAX_POS - MESH_MIN_X)
-  #define MESH_MIN_Y 10
-  #define MESH_MAX_Y (Y_MAX_POS - MESH_MIN_Y)
-  #define MESH_NUM_X_POINTS 3  // Don't use more than 7 points per axis, implementation limited.
-  #define MESH_NUM_Y_POINTS 3
-  #define MESH_HOME_SEARCH_Z 4  // Z after Home, bed somewhere below but above 0.0.
+  #define MESH_HOME_SEARCH_Z 5  // Z after Home, bed somewhere below but above 0.0.
+  #if ENABLED(DELTA)
+    #define MESH_NUM_RADIUS 2 // Integer Not including center
+    #define MESH_NUM_ANGLES 6 // Integer Number of angles to probe per radius
+    #define MESH_TOTAL_POINTS (MESH_NUM_RADIUS*MESH_NUM_ANGLES+1)
+    #define MESH_MAX_RADIUS DELTA_PRINTABLE_RADIUS
+    #define MESH_MIN_RADIUS 0.0 //Leave 0 unless you have a very good reason.
+    #define MESH_START_ANGLE_DEG 30.0
+  #else
+    #define MESH_MIN_X 10
+    #define MESH_MAX_X (X_MAX_POS - MESH_MIN_X)
+    #define MESH_MIN_Y 10
+    #define MESH_MAX_Y (Y_MAX_POS - MESH_MIN_Y)
+    #define MESH_NUM_X_POINTS 3  // Don't use more than 7 points per axis, implementation limited.
+    #define MESH_NUM_Y_POINTS 3
+    
+  #endif
 #endif  // MESH_BED_LEVELING
 
 //===========================================================================
@@ -519,7 +545,7 @@ const bool Z_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the logic
 // @section bedlevel
 
 
-#define AUTO_BED_LEVELING_FEATURE // Delete the comment to enable (remove // at the start of the line)
+//#define AUTO_BED_LEVELING_FEATURE // Delete the comment to enable (remove // at the start of the line)
 //#define DEBUG_LEVELING_FEATURE
 //#define Z_MIN_PROBE_REPEATABILITY_TEST  // If not commented out, Z-Probe Repeatability test will be included if Auto Bed Leveling is Enabled.
 
@@ -743,7 +769,9 @@ const bool Z_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the logic
 #if ENABLED(MANUAL_HOME_POSITIONS)
   #define MANUAL_X_HOME_POS 0
   #define MANUAL_Y_HOME_POS 0
-  #define MANUAL_Z_HOME_POS 200.8 // For delta: Distance between nozzle and print surface after homing.
+  //#define MANUAL_Z_HOME_POS 200.4 // For delta: Distance between nozzle and print surface after homing.
+  //#define MANUAL_Z_HOME_POS 200.6 // For delta: Distance between nozzle and print surface after homing.
+  #define MANUAL_Z_HOME_POS 205.0 // For delta: Distance between nozzle and print surface after homing.
 #endif
 
 // @section movement
@@ -753,15 +781,15 @@ const bool Z_PROBE_ENDSTOP_INVERTING = false; // set to true to invert the logic
  */
 
 // delta homing speeds must be the same on xyz
-#define HOMING_FEEDRATE_XYZ (200*10) //????
+#define HOMING_FEEDRATE_XYZ (120*10) //????
 #define HOMING_FEEDRATE_E 0
 #define HOMING_FEEDRATE { HOMING_FEEDRATE_XYZ, HOMING_FEEDRATE_XYZ, HOMING_FEEDRATE_XYZ, HOMING_FEEDRATE_E }
 
 // default settings
 // delta speeds must be the same on xyz
-#define DEFAULT_AXIS_STEPS_PER_UNIT   {80,80, 80, 93}  // default steps per unit for Kossel (GT2, 20 tooth)
-//#define DEFAULT_AXIS_STEPS_PER_UNIT   {80*2 ,80*2 , 80*2 , 93}  // 1/32 steps for X Y Z
-#define DEFAULT_MAX_FEEDRATE          {600, 600, 600, 45}    // (mm/sec)
+//#define DEFAULT_AXIS_STEPS_PER_UNIT   {80,80, 80, 93}  // default steps per unit for Kossel (GT2, 20 tooth)
+#define DEFAULT_AXIS_STEPS_PER_UNIT   {80.0*2.0 ,80.0*2.0 , 80.0*2.0 , 93.0*2.0}  // 1/32 steps for X Y Z
+#define DEFAULT_MAX_FEEDRATE          {600*4, 600*4, 600*4, 45}    // (mm/sec)
 #define DEFAULT_MAX_ACCELERATION      {5000,5000,5000,5000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
 
 #define DEFAULT_ACCELERATION          1000    // X, Y, Z and E acceleration in mm/s^2 for printing moves
